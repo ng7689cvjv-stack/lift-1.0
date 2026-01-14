@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lift">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Lift</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --slate: #2d2d34;
+            --red: #D55B3A;
+            --cream: #F4E8D0;
+            --white: #E8E8E8;
+            --gray: #A0A0A0;
+            --dark-red: #C44B2E;
+            --header-red: #EE6C4D;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--slate);
+            color: var(--white);
+            font-family: 'Space Grotesk', sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            padding-top: env(safe-area-inset-top);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        h1, h2, h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+            font-weight: 400;
+        }
+        
+        h1 {
+            font-size: 64px;
+            color: var(--cream);
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        h2 {
+            font-size: 36px;
+            color: var(--header-red);
+            margin-bottom: 24px;
+            border-bottom: 3px solid var(--header-red);
+            padding-bottom: 8px;
+        }
+        
+        .date-display {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--cream);
+            font-size: 18px;
+            margin-bottom: 32px;
+            font-weight: 600;
+        }
+        
+        .number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+        }
+        
+        /* Exercise Selector */
+        .exercise-section {
+            margin-bottom: 32px;
+        }
+        
+        .main-lifts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .lift-btn {
+            background: transparent;
+            border: 2px solid var(--cream);
+            color: var(--cream);
+            padding: 16px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .lift-btn:hover {
+            background: var(--cream);
+            color: var(--slate);
+        }
+        
+        .lift-btn.selected {
+            background: var(--red);
+            border-color: var(--red);
+            color: var(--white);
+        }
+        
+        select, input {
+            background: #1a1a1f;
+            border: 2px solid var(--gray);
+            color: var(--white);
+            padding: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 18px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--red);
+        }
+        
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .input-wrapper {
+            margin-bottom: 0;
+        }
+        
+        .input-wrapper label {
+            display: block;
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .input-wrapper input {
+            margin-bottom: 0;
+        }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 20px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 2px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+        
+        .btn-primary {
+            background: var(--red);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background: var(--dark-red);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--cream);
+            border: 2px solid var(--cream);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--cream);
+            color: var(--slate);
+        }
+        
+        /* Sets Display */
+        .sets-list {
+            margin: 32px 0;
+        }
+        
+        .set-item {
+            background: #1a1a1f;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--cream);
+        }
+        
+        .set-info {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 18px;
+        }
+        
+        .set-number {
+            color: var(--gray);
+            margin-right: 16px;
+        }
+        
+        .delete-btn {
+            background: transparent;
+            border: 1px solid var(--red);
+            color: var(--red);
+            padding: 8px 16px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .delete-btn:hover {
+            background: var(--red);
+            color: var(--white);
+        }
+        
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a1f;
+            display: flex;
+            border-top: 2px solid var(--red);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .nav-btn {
+            flex: 1;
+            padding: 20px;
+            background: transparent;
+            border: none;
+            color: var(--gray);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-right: 1px solid var(--slate);
+        }
+        
+        .nav-btn:last-child {
+            border-right: none;
+        }
+        
+        .nav-btn.active {
+            background: var(--red);
+            color: var(--white);
+        }
+        
+        .nav-btn:hover {
+            color: var(--cream);
+        }
+        
+        /* Pages */
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* PRs Page */
+        .pr-list {
+            margin-top: 32px;
+        }
+        
+        .pr-item {
+            background: #1a1a1f;
+            padding: 24px;
+            margin-bottom: 16px;
+            border-left: 4px solid var(--red);
+        }
+        
+        .pr-item h3 {
+            font-size: 28px;
+            color: var(--cream);
+            margin-bottom: 16px;
+        }
+        
+        .pr-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 36px;
+            color: var(--red);
+            margin-bottom: 8px;
+        }
+        
+        .pr-details {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        /* Trends Page */
+        .trend-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .trend-btn {
+            background: transparent;
+            border: 2px solid var(--gray);
+            color: var(--gray);
+            padding: 12px 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .trend-btn.active {
+            background: var(--red);
+            border-color: var(--red);
+            color: var(--white);
+        }
+        
+        .chart-container {
+            background: #1a1a1f;
+            padding: 24px;
+            margin-bottom: 24px;
+            min-height: 300px;
+        }
+        
+        /* Settings Page */
+        .settings-section {
+            margin-bottom: 32px;
+        }
+        
+        .settings-section h3 {
+            font-size: 24px;
+            color: var(--cream);
+            margin-bottom: 16px;
+        }
+        
+        .export-info {
+            background: #1a1a1f;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        .success-message {
+            background: var(--cream);
+            color: var(--slate);
+            padding: 16px;
+            margin-bottom: 16px;
+            font-family: 'Space Grotesk', sans-serif;
+            text-align: center;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        /* Empty states */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--gray);
+        }
+        
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 48px;
+            }
+            
+            .main-lifts {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- LOG PAGE -->
+        <div id="log-page" class="page active">
+            <h1>LET'S LIFT</h1>
+            <div class="date-display" id="current-date"></div>
+            
+            <div class="exercise-section">
+                <h2>Select Exercise</h2>
+                <div class="main-lifts">
+                    <button class="lift-btn" data-exercise="Bench Press">Bench Press</button>
+                    <button class="lift-btn" data-exercise="Squat">Squat</button>
+                    <button class="lift-btn" data-exercise="Overhead Press">OHP</button>
+                    <button class="lift-btn" data-exercise="Deadlift">Deadlift</button>
+                    <button class="lift-btn" data-exercise="Power Clean">Clean</button>
+                </div>
+                
+                <select id="exercise-select">
+                    <option value="">Select variation or accessory...</option>
+                    <option value="Front Squat">Front Squat</option>
+                    <option value="Straight Leg Deadlift">Straight Leg Deadlift</option>
+                    <option value="Press 2.0">Press 2.0</option>
+                    <option value="Press Jerk">Press Jerk</option>
+                    <option value="Arnold Press">Arnold Press</option>
+                    <option value="Push-ups">Push-ups</option>
+                    <option value="Pull-ups">Pull-ups</option>
+                    <option value="custom">+ Add Custom Exercise</option>
+                </select>
+            </div>
+            
+            <div id="input-section" style="display: none;">
+                <h2 id="selected-exercise-title"></h2>
+                
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <label>Weight (lbs)</label>
+                        <input type="number" id="weight-input" placeholder="0" step="5">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Reps</label>
+                        <input type="number" id="reps-input" placeholder="0" step="1">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" id="add-set-btn">Add Set</button>
+                
+                <div class="sets-list" id="sets-list"></div>
+                
+                <button class="btn btn-secondary" id="finish-workout-btn" style="display: none;">Finish Workout</button>
+            </div>
+        </div>
+        
+        <!-- PRS PAGE -->
+        <div id="prs-page" class="page">
+            <h1>LET'S LIFT</h1>
+            <div class="date-display">Personal Records</div>
+            
+            <div class="pr-list" id="pr-list"></div>
+        </div>
+        
+        <!-- TRENDS PAGE -->
+        <div id="trends-page" class="page">
+            <h1>LET'S LIFT</h1>
+            <div class="date-display">Progress Analysis</div>
+            
+            <div class="trend-selector">
+                <button class="trend-btn active" data-view="volume">Weekly Volume</button>
+                <button class="trend-btn" data-view="exercise">Exercise Progress</button>
+            </div>
+            
+            <div id="trend-content"></div>
+        </div>
+        
+        <!-- SETTINGS PAGE -->
+        <div id="settings-page" class="page">
+            <h1>LET'S LIFT</h1>
+            <div class="date-display">Data Management</div>
+            
+            <div class="settings-section">
+                <h3>Export Data</h3>
+                <div class="export-info" id="data-info">
+                    No workouts logged yet
+                </div>
+                <button class="btn btn-primary" id="export-json-btn">Export JSON</button>
+                <button class="btn btn-secondary" id="export-csv-btn">Export CSV</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Google Drive Backup</h3>
+                <div class="success-message" id="backup-success">Backup successful!</div>
+                <button class="btn btn-primary" id="gdrive-backup-btn">Backup to Google Drive</button>
+                <button class="btn btn-secondary" id="gdrive-restore-btn">Restore from Google Drive</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Import Data</h3>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+                <button class="btn btn-secondary" id="import-btn">Import JSON</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Danger Zone</h3>
+                <button class="btn btn-secondary" id="clear-data-btn" style="border-color: var(--red); color: var(--red);">Clear All Data</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="nav">
+        <button class="nav-btn active" data-page="log">Log</button>
+        <button class="nav-btn" data-page="prs">PRs</button>
+        <button class="nav-btn" data-page="trends">Trends</button>
+        <button class="nav-btn" data-page="settings">Settings</button>
+    </nav>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Data Structure
+        let workouts = JSON.parse(localStorage.getItem('workouts')) || [];
+        let currentExercise = '';
+        let todaysSets = [];
+        let customExercises = JSON.parse(localStorage.getItem('customExercises')) || [];
+        
+        // Initialize
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        // Exercise Selection
+        document.querySelectorAll('.lift-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.lift-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('exercise-select').value = '';
+                selectExercise(btn.dataset.exercise);
+            });
+        });
+        
+        document.getElementById('exercise-select').addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                const customName = prompt('Enter custom exercise name:');
+                if (customName && customName.trim()) {
+                    if (!customExercises.includes(customName.trim())) {
+                        customExercises.push(customName.trim());
+                        localStorage.setItem('customExercises', JSON.stringify(customExercises));
+                        updateExerciseDropdown();
+                    }
+                    selectExercise(customName.trim());
+                    e.target.value = customName.trim();
+                }
+            } else if (e.target.value) {
+                document.querySelectorAll('.lift-btn').forEach(b => b.classList.remove('selected'));
+                selectExercise(e.target.value);
+            }
+        });
+        
+        function updateExerciseDropdown() {
+            const select = document.getElementById('exercise-select');
+            const customOptions = customExercises.map(ex => 
+                `<option value="${ex}">${ex}</option>`
+            ).join('');
+            
+            // Insert before the "Add Custom" option
+            const lastOption = select.lastElementChild;
+            lastOption.insertAdjacentHTML('beforebegin', customOptions);
+        }
+        
+        function selectExercise(exercise) {
+            currentExercise = exercise;
+            document.getElementById('selected-exercise-title').textContent = exercise;
+            document.getElementById('input-section').style.display = 'block';
+            todaysSets = [];
+            renderSets();
+        }
+        
+        // Add Set
+        document.getElementById('add-set-btn').addEventListener('click', () => {
+            const weight = parseFloat(document.getElementById('weight-input').value);
+            const reps = parseInt(document.getElementById('reps-input').value);
+            
+            if (!weight || !reps) {
+                alert('Please enter weight and reps');
+                return;
+            }
+            
+            todaysSets.push({ weight, reps });
+            renderSets();
+            
+            // Clear reps input, keep weight
+            document.getElementById('reps-input').value = '';
+            document.getElementById('reps-input').focus();
+            
+            document.getElementById('finish-workout-btn').style.display = 'block';
+        });
+        
+        function renderSets() {
+            const container = document.getElementById('sets-list');
+            if (todaysSets.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = todaysSets.map((set, index) => `
+                <div class="set-item">
+                    <div>
+                        <span class="set-number">Set ${index + 1}</span>
+                        <span class="set-info">${set.weight} lbs × ${set.reps} reps</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteSet(${index})">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        function deleteSet(index) {
+            todaysSets.splice(index, 1);
+            renderSets();
+            if (todaysSets.length === 0) {
+                document.getElementById('finish-workout-btn').style.display = 'none';
+            }
+        }
+        
+        // Finish Workout
+        document.getElementById('finish-workout-btn').addEventListener('click', () => {
+            if (todaysSets.length === 0) return;
+            
+            const workout = {
+                date: new Date().toISOString(),
+                exercise: currentExercise,
+                sets: [...todaysSets]
+            };
+            
+            workouts.push(workout);
+            localStorage.setItem('workouts', JSON.stringify(workouts));
+            
+            // Reset
+            todaysSets = [];
+            document.getElementById('weight-input').value = '';
+            document.getElementById('reps-input').value = '';
+            document.getElementById('input-section').style.display = 'none';
+            document.querySelectorAll('.lift-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('exercise-select').value = '';
+            
+            alert('Workout saved!');
+        });
+        
+        // Calculate estimated 1RM using Brzycki formula
+        function calculate1RM(weight, reps) {
+            if (reps === 1) return weight;
+            if (reps > 10) return null; // Less accurate for high reps
+            return weight * (36 / (37 - reps));
+        }
+        
+        // PRs Page
+        function renderPRs() {
+            const mainLifts = ['Bench Press', 'Squat', 'Overhead Press', 'Deadlift', 'Power Clean'];
+            const prList = document.getElementById('pr-list');
+            
+            if (workouts.length === 0) {
+                prList.innerHTML = '<div class="empty-state"><h3>No PRs Yet</h3><p>Start logging workouts to see your records</p></div>';
+                return;
+            }
+            
+            const prs = {};
+            
+            mainLifts.forEach(lift => {
+                const liftWorkouts = workouts.filter(w => w.exercise === lift);
+                if (liftWorkouts.length === 0) return;
+                
+                let bestE1RM = 0;
+                let heaviestWeight = 0;
+                let bestSet = null;
+                let heaviestSet = null;
+                let bestDate = null;
+                let heaviestDate = null;
+                
+                liftWorkouts.forEach(workout => {
+                    workout.sets.forEach(set => {
+                        const e1rm = calculate1RM(set.weight, set.reps);
+                        if (e1rm && e1rm > bestE1RM) {
+                            bestE1RM = e1rm;
+                            bestSet = set;
+                            bestDate = workout.date;
+                        }
+                        if (set.weight > heaviestWeight) {
+                            heaviestWeight = set.weight;
+                            heaviestSet = set;
+                            heaviestDate = workout.date;
+                        }
+                    });
+                });
+                
+                if (bestSet && heaviestSet) {
+                    prs[lift] = { 
+                        e1rm: bestE1RM, 
+                        set: bestSet, 
+                        date: bestDate,
+                        heaviestWeight: heaviestWeight,
+                        heaviestSet: heaviestSet,
+                        heaviestDate: heaviestDate
+                    };
+                }
+            });
+            
+            prList.innerHTML = Object.entries(prs).map(([lift, data]) => `
+                <div class="pr-item">
+                    <h3>${lift}</h3>
+                    <div class="pr-value">${data.heaviestWeight} lbs × ${data.heaviestSet.reps}</div>
+                    <div class="pr-details">
+                        Est. 1RM: ${Math.round(data.e1rm)} lbs<br>
+                        ${new Date(data.heaviestDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                </div>
+            `).join('');
+            
+            if (Object.keys(prs).length === 0) {
+                prList.innerHTML = '<div class="empty-state"><h3>No PRs Yet</h3><p>Start logging your main lifts to see records</p></div>';
+            }
+        }
+        
+        // Trends Page
+        function renderTrends(view = 'volume') {
+            const container = document.getElementById('trend-content');
+            
+            if (workouts.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No Data Yet</h3><p>Start logging workouts to see trends</p></div>';
+                return;
+            }
+            
+            if (view === 'volume') {
+                renderWeeklyVolume(container);
+            } else if (view === 'exercise') {
+                renderExerciseProgress(container);
+            }
+        }
+        
+        function renderWeeklyVolume(container) {
+            // Group workouts by week
+            const weeklyData = {};
+            
+            workouts.forEach(workout => {
+                const date = new Date(workout.date);
+                const weekStart = new Date(date);
+                weekStart.setDate(date.getDate() - date.getDay());
+                const weekKey = weekStart.toISOString().split('T')[0];
+                
+                if (!weeklyData[weekKey]) {
+                    weeklyData[weekKey] = 0;
+                }
+                
+                workout.sets.forEach(set => {
+                    weeklyData[weekKey] += set.weight * set.reps;
+                });
+            });
+            
+            const weeks = Object.keys(weeklyData).sort();
+            const volumes = weeks.map(week => weeklyData[week]);
+            
+            container.innerHTML = '<div class="chart-container"><canvas id="volume-chart"></canvas></div>';
+            
+            const ctx = document.getElementById('volume-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: weeks.map(w => new Date(w).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: 'Total Volume (lbs)',
+                        data: volumes,
+                        backgroundColor: '#DC2F02',
+                        borderColor: '#DC2F02',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#A0A0A0' },
+                            grid: { color: '#3d3d44' }
+                        },
+                        x: {
+                            ticks: { color: '#A0A0A0' },
+                            grid: { color: '#3d3d44' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#E8E8E8', font: { family: 'Space Grotesk' } }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderExerciseProgress(container) {
+            const mainLifts = ['Bench Press', 'Squat', 'Overhead Press', 'Deadlift', 'Power Clean'];
+            
+            container.innerHTML = `
+                <select id="exercise-trend-select" style="margin-bottom: 24px;">
+                    ${mainLifts.map(lift => `<option value="${lift}">${lift}</option>`).join('')}
+                </select>
+                <div class="chart-container"><canvas id="exercise-chart"></canvas></div>
+            `;
+            
+            const select = document.getElementById('exercise-trend-select');
+            let currentChart = null;
+            
+            function updateExerciseChart(exercise) {
+                const exerciseWorkouts = workouts
+                    .filter(w => w.exercise === exercise)
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                if (exerciseWorkouts.length === 0) {
+                    return;
+                }
+                
+                const dates = [];
+                const e1rms = [];
+                
+                exerciseWorkouts.forEach(workout => {
+                    let maxE1RM = 0;
+                    workout.sets.forEach(set => {
+                        const e1rm = calculate1RM(set.weight, set.reps);
+                        if (e1rm && e1rm > maxE1RM) {
+                            maxE1RM = e1rm;
+                        }
+                    });
+                    
+                    if (maxE1RM > 0) {
+                        dates.push(new Date(workout.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                        e1rms.push(Math.round(maxE1RM));
+                    }
+                });
+                
+                if (currentChart) {
+                    currentChart.destroy();
+                }
+                
+                const ctx = document.getElementById('exercise-chart').getContext('2d');
+                currentChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Estimated 1RM (lbs)',
+                            data: e1rms,
+                            borderColor: '#DC2F02',
+                            backgroundColor: 'rgba(220, 47, 2, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: { color: '#A0A0A0' },
+                                grid: { color: '#3d3d44' }
+                            },
+                            x: {
+                                ticks: { color: '#A0A0A0' },
+                                grid: { color: '#3d3d44' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#E8E8E8', font: { family: 'Space Grotesk' } }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            updateExerciseChart(select.value);
+            select.addEventListener('change', (e) => updateExerciseChart(e.target.value));
+        }
+        
+        // Trend view selector
+        document.querySelectorAll('.trend-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.trend-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderTrends(btn.dataset.view);
+            });
+        });
+        
+        // Export/Import
+        document.getElementById('export-json-btn').addEventListener('click', () => {
+            const data = {
+                workouts,
+                customExercises,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        });
+        
+        document.getElementById('export-csv-btn').addEventListener('click', () => {
+            let csv = 'Date,Exercise,Set,Weight,Reps,Volume\n';
+            
+            workouts.forEach(workout => {
+                workout.sets.forEach((set, index) => {
+                    const date = new Date(workout.date).toLocaleDateString();
+                    csv += `${date},${workout.exercise},${index + 1},${set.weight},${set.reps},${set.weight * set.reps}\n`;
+                });
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-data-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        });
+        
+        document.getElementById('import-btn').addEventListener('click', () => {
+            document.getElementById('import-file').click();
+        });
+        
+        document.getElementById('import-file').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (confirm('This will replace all current data. Continue?')) {
+                        workouts = data.workouts || [];
+                        customExercises = data.customExercises || [];
+                        localStorage.setItem('workouts', JSON.stringify(workouts));
+                        localStorage.setItem('customExercises', JSON.stringify(customExercises));
+                        updateExerciseDropdown();
+                        updateDataInfo();
+                        alert('Data imported successfully!');
+                    }
+                } catch (err) {
+                    alert('Error importing file. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+        });
+        
+        document.getElementById('clear-data-btn').addEventListener('click', () => {
+            if (confirm('This will delete ALL workout data. This cannot be undone. Are you sure?')) {
+                if (confirm('Really sure? This is permanent.')) {
+                    localStorage.clear();
+                    workouts = [];
+                    customExercises = [];
+                    todaysSets = [];
+                    location.reload();
+                }
+            }
+        });
+        
+        // Google Drive Integration (placeholder - requires OAuth setup)
+        document.getElementById('gdrive-backup-btn').addEventListener('click', () => {
+            alert('Google Drive integration requires OAuth setup. For now, use Export JSON and manually upload to Google Drive.');
+        });
+        
+        document.getElementById('gdrive-restore-btn').addEventListener('click', () => {
+            alert('Google Drive integration requires OAuth setup. For now, download from Google Drive and use Import JSON.');
+        });
+        
+        function updateDataInfo() {
+            const info = document.getElementById('data-info');
+            if (workouts.length === 0) {
+                info.textContent = 'No workouts logged yet';
+            } else {
+                const totalSets = workouts.reduce((sum, w) => sum + w.sets.length, 0);
+                const totalVolume = workouts.reduce((sum, w) => 
+                    sum + w.sets.reduce((s, set) => s + (set.weight * set.reps), 0), 0
+                );
+                info.innerHTML = `
+                    ${workouts.length} workouts logged<br>
+                    ${totalSets} total sets<br>
+                    ${totalVolume.toLocaleString()} lbs total volume
+                `;
+            }
+        }
+        
+        // Navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = btn.dataset.page;
+                
+                // Update nav
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Update pages
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(`${page}-page`).classList.add('active');
+                
+                // Load page-specific content
+                if (page === 'prs') {
+                    renderPRs();
+                } else if (page === 'trends') {
+                    renderTrends('volume');
+                } else if (page === 'settings') {
+                    updateDataInfo();
+                }
+            });
+        });
+        
+        // Initialize
+        updateExerciseDropdown();
+        updateDataInfo();
+        
+        // Register service worker for offline functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
