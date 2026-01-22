@@ -216,7 +216,7 @@
         /* Lift Cards */
         .lift-cards-container {
             display: grid;
-            gap: 16px;
+            gap: 24px;
         }
         
         .lift-card {
@@ -604,6 +604,202 @@
             font-family: 'IBM Plex Mono', monospace;
             color: var(--gray);
             font-size: 12px;
+        }
+        
+        .workout-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .workout-action-btn {
+            flex: 1;
+            padding: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            border: 2px solid var(--gray);
+            background: transparent;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .workout-action-btn:hover {
+            border-color: var(--cream);
+            color: var(--cream);
+        }
+        
+        .workout-action-btn.danger {
+            border-color: var(--red);
+            color: var(--red);
+        }
+        
+        .workout-action-btn.danger:hover {
+            background: var(--red);
+            color: var(--white);
+        }
+        
+        .workout-action-btn.primary {
+            background: var(--red);
+            border-color: var(--red);
+            color: var(--white);
+        }
+        
+        .workout-action-btn.primary:hover {
+            background: var(--dark-red);
+        }
+        
+        .edit-set-item {
+            background: #0f0f12;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .edit-set-input {
+            flex: 1;
+            background: #1a1a1f;
+            border: 2px solid var(--gray);
+            color: var(--white);
+            padding: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+        }
+        
+        .edit-set-input:focus {
+            outline: none;
+            border-color: var(--header-red);
+        }
+        
+        .edit-set-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            color: var(--gray);
+            min-width: 60px;
+        }
+        
+        .delete-set-btn {
+            background: transparent;
+            border: 1px solid var(--red);
+            color: var(--red);
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .delete-set-btn:hover {
+            background: var(--red);
+            color: var(--white);
+        }
+        
+        .workout-actions {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #3d3d44;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .edit-workout-btn {
+            flex: 1;
+            background: transparent;
+            border: 2px solid var(--cream);
+            color: var(--cream);
+            padding: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .edit-workout-btn:hover {
+            background: var(--cream);
+            color: var(--slate);
+        }
+        
+        .delete-workout-btn {
+            flex: 1;
+            background: transparent;
+            border: 2px solid var(--red);
+            color: var(--red);
+            padding: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .delete-workout-btn:hover {
+            background: var(--red);
+            color: var(--white);
+        }
+        
+        /* Edit Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--slate);
+            border: 3px solid var(--cream);
+            padding: 32px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px;
+            color: var(--cream);
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+        }
+        
+        .edit-set-item {
+            background: #1a1a1f;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--red);
+        }
+        
+        .edit-set-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .edit-set-inputs input {
+            margin-bottom: 0;
+            padding: 12px;
+            font-size: 16px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
         }
         
         .month-nav {
@@ -1028,13 +1224,21 @@
         
         // Trends Page
         function renderTrends() {
+            // Wait for Chart.js to be available
+            if (typeof Chart === 'undefined') {
+                setTimeout(renderTrends, 200);
+                return;
+            }
             renderWeeklyVolume();
             renderLiftCards();
         }
         
         function renderWeeklyVolume() {
             const canvas = document.getElementById('volume-chart');
-            if (!canvas) return;
+            if (!canvas) {
+                setTimeout(renderWeeklyVolume, 100);
+                return;
+            }
             
             if (workouts.length === 0) {
                 const container = canvas.parentElement;
@@ -1042,7 +1246,17 @@
                 return;
             }
             
-            // Group workouts by week (last 6 weeks)
+            // IMPORTANT: Destroy existing chart first
+            if (window.volumeChart) {
+                try {
+                    window.volumeChart.destroy();
+                } catch (e) {
+                    console.log('Chart destroy error:', e);
+                }
+                window.volumeChart = null;
+            }
+            
+            // Group workouts by week (last 6 weeks) using local dates
             const weeklyData = {};
             const now = new Date();
             
@@ -1050,24 +1264,32 @@
             for (let i = 5; i >= 0; i--) {
                 const weekStart = new Date(now);
                 weekStart.setDate(now.getDate() - now.getDay() - (i * 7)); // Start of week (Sunday)
+                weekStart.setHours(0, 0, 0, 0); // Normalize to start of day
                 const weekKey = weekStart.toISOString().split('T')[0];
                 weeklyData[weekKey] = 0;
             }
             
             workouts.forEach(workout => {
+                // Use local date, not UTC
                 const date = new Date(workout.date);
-                const weekStart = new Date(date);
-                weekStart.setDate(date.getDate() - date.getDay());
+                const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                const weekStart = new Date(localDate);
+                weekStart.setDate(localDate.getDate() - localDate.getDay());
                 const weekKey = weekStart.toISOString().split('T')[0];
                 
-                if (weeklyData.hasOwnProperty(weekKey)) {
-                    workout.sets.forEach(set => {
-                        weeklyData[weekKey] += set.weight * set.reps;
-                    });
+                // Add to this week's data even if not in our predefined weeks
+                if (!weeklyData.hasOwnProperty(weekKey)) {
+                    weeklyData[weekKey] = 0;
                 }
+                
+                workout.sets.forEach(set => {
+                    weeklyData[weekKey] += set.weight * set.reps;
+                });
             });
             
-            const weeks = Object.keys(weeklyData).sort();
+            // Sort weeks and get last 6 with data
+            const allWeeks = Object.keys(weeklyData).sort();
+            const weeks = allWeeks.slice(-6);
             const volumes = weeks.map(week => weeklyData[week]);
             
             // Create readable date range labels
@@ -1087,11 +1309,7 @@
             
             const ctx = canvas.getContext('2d');
             
-            // Destroy existing chart if it exists
-            if (window.volumeChart) {
-                window.volumeChart.destroy();
-            }
-            
+            // Create new chart
             window.volumeChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -1500,10 +1718,14 @@
                 return;
             }
             
-            // Group workouts by date and exercise
-            const workoutsByDate = {};
+            // Sort workouts by date (most recent first) and limit to 20
+            const sortedWorkouts = workouts
+                .map((w, index) => ({ ...w, originalIndex: index }))
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 20);
             
-            workouts.forEach(workout => {
+            // Render workout items
+            const html = sortedWorkouts.map(workout => {
                 const date = new Date(workout.date).toLocaleDateString('en-US', { 
                     weekday: 'short',
                     month: 'short', 
@@ -1511,68 +1733,130 @@
                     year: 'numeric'
                 });
                 
-                if (!workoutsByDate[date]) {
-                    workoutsByDate[date] = {};
-                }
-                
-                if (!workoutsByDate[date][workout.exercise]) {
-                    workoutsByDate[date][workout.exercise] = [];
-                }
-                
-                workoutsByDate[date][workout.exercise].push(...workout.sets);
-            });
-            
-            // Sort dates in reverse chronological order
-            const sortedDates = Object.keys(workoutsByDate).sort((a, b) => {
-                return new Date(b) - new Date(a);
-            });
-            
-            // Render workout items
-            const html = sortedDates.slice(0, 20).map(date => {
-                const exercises = workoutsByDate[date];
-                
-                // Calculate total volume for the day
-                let totalVolume = 0;
-                Object.values(exercises).forEach(sets => {
-                    sets.forEach(set => {
-                        totalVolume += set.weight * set.reps;
-                    });
-                });
-                
-                // Build exercise list
-                const exerciseLines = Object.entries(exercises).map(([exercise, sets]) => {
-                    const setCount = sets.length;
-                    const repRange = sets.length > 0 ? 
-                        (Math.min(...sets.map(s => s.reps)) === Math.max(...sets.map(s => s.reps)) ?
-                            `${sets[0].reps}` :
-                            `${Math.min(...sets.map(s => s.reps))}-${Math.max(...sets.map(s => s.reps))}`) : '';
-                    const weightRange = sets.length > 0 ?
-                        (Math.min(...sets.map(s => s.weight)) === Math.max(...sets.map(s => s.weight)) ?
-                            `${sets[0].weight}` :
-                            `${Math.min(...sets.map(s => s.weight))}-${Math.max(...sets.map(s => s.weight))}`) : '';
-                    
-                    return `
-                        <div class="workout-exercise-line">
-                            <span class="workout-exercise-name">${exercise}</span>
-                            <span class="workout-exercise-details">${setCount} × ${repRange} @ ${weightRange} lbs</span>
-                        </div>
-                    `;
-                }).join('');
+                const totalVolume = workout.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+                const setCount = workout.sets.length;
+                const repRange = workout.sets.length > 0 ? 
+                    (Math.min(...workout.sets.map(s => s.reps)) === Math.max(...workout.sets.map(s => s.reps)) ?
+                        `${workout.sets[0].reps}` :
+                        `${Math.min(...workout.sets.map(s => s.reps))}-${Math.max(...workout.sets.map(s => s.reps))}`) : '';
+                const weightRange = workout.sets.length > 0 ?
+                    (Math.min(...workout.sets.map(s => s.weight)) === Math.max(...workout.sets.map(s => s.weight)) ?
+                        `${workout.sets[0].weight}` :
+                        `${Math.min(...workout.sets.map(s => s.weight))}-${Math.max(...workout.sets.map(s => s.weight))}`) : '';
                 
                 return `
-                    <div class="workout-item">
+                    <div class="workout-item" data-workout-index="${workout.originalIndex}">
                         <div class="workout-header">
                             <div class="workout-date">${date}</div>
                             <div class="workout-volume">${totalVolume.toLocaleString()} lbs total</div>
                         </div>
                         <div class="workout-exercises">
-                            ${exerciseLines}
+                            <div class="workout-exercise-line">
+                                <span class="workout-exercise-name">${workout.exercise}</span>
+                                <span class="workout-exercise-details">${setCount} × ${repRange} @ ${weightRange} lbs</span>
+                            </div>
+                        </div>
+                        <div class="workout-actions">
+                            <button class="workout-action-btn" onclick="editWorkout(${workout.originalIndex})">Edit</button>
+                            <button class="workout-action-btn danger" onclick="deleteWorkout(${workout.originalIndex})">Delete</button>
                         </div>
                     </div>
                 `;
             }).join('');
             
             container.innerHTML = html;
+        }
+        
+        function editWorkout(index) {
+            const workout = workouts[index];
+            if (!workout) return;
+            
+            const workoutItem = document.querySelector(`[data-workout-index="${index}"]`);
+            if (!workoutItem) return;
+            
+            const date = new Date(workout.date).toLocaleDateString('en-US', { 
+                weekday: 'short',
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            const setsHTML = workout.sets.map((set, setIndex) => `
+                <div class="edit-set-item">
+                    <span class="edit-set-label">Set ${setIndex + 1}</span>
+                    <input type="number" class="edit-set-input" data-set-index="${setIndex}" data-field="weight" value="${set.weight}" placeholder="Weight" step="5">
+                    <span style="color: var(--gray);">×</span>
+                    <input type="number" class="edit-set-input" data-set-index="${setIndex}" data-field="reps" value="${set.reps}" placeholder="Reps" step="1">
+                    <button class="delete-set-btn" onclick="deleteSetFromEdit(${index}, ${setIndex})">Delete</button>
+                </div>
+            `).join('');
+            
+            workoutItem.innerHTML = `
+                <div class="workout-header">
+                    <div class="workout-date">${date}</div>
+                    <div class="workout-exercise-name" style="font-family: 'Bebas Neue'; font-size: 20px; color: var(--cream);">${workout.exercise}</div>
+                </div>
+                <div style="margin: 16px 0;">
+                    ${setsHTML}
+                </div>
+                <div class="workout-actions">
+                    <button class="workout-action-btn primary" onclick="saveWorkoutEdit(${index})">Save</button>
+                    <button class="workout-action-btn" onclick="cancelWorkoutEdit()">Cancel</button>
+                </div>
+            `;
+        }
+        
+        function deleteSetFromEdit(workoutIndex, setIndex) {
+            const workout = workouts[workoutIndex];
+            if (!workout || !workout.sets[setIndex]) return;
+            
+            if (workout.sets.length === 1) {
+                alert('Cannot delete the last set. Delete the entire workout instead.');
+                return;
+            }
+            
+            workout.sets.splice(setIndex, 1);
+            editWorkout(workoutIndex); // Re-render edit view
+        }
+        
+        function saveWorkoutEdit(index) {
+            const workout = workouts[index];
+            if (!workout) return;
+            
+            const workoutItem = document.querySelector(`[data-workout-index="${index}"]`);
+            const inputs = workoutItem.querySelectorAll('.edit-set-input');
+            
+            inputs.forEach(input => {
+                const setIndex = parseInt(input.dataset.setIndex);
+                const field = input.dataset.field;
+                const value = parseFloat(input.value);
+                
+                if (value && workout.sets[setIndex]) {
+                    workout.sets[setIndex][field] = value;
+                }
+            });
+            
+            localStorage.setItem('workouts', JSON.stringify(workouts));
+            renderWorkoutHistory();
+            renderCalendar();
+            
+            alert('Workout updated!');
+        }
+        
+        function cancelWorkoutEdit() {
+            renderWorkoutHistory();
+        }
+        
+        function deleteWorkout(index) {
+            if (!confirm('Delete this workout? This cannot be undone.')) return;
+            
+            workouts.splice(index, 1);
+            localStorage.setItem('workouts', JSON.stringify(workouts));
+            
+            renderWorkoutHistory();
+            renderCalendar();
+            
+            alert('Workout deleted!');
         }
         
         // Initialize
