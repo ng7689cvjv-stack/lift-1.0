@@ -1120,18 +1120,20 @@
                 return;
             }
             
-            // Group by date
-            const byDate = {};
-            workouts.forEach(w => {
-                const date = new Date(w.date).toDateString();
-                if (!byDate[date]) byDate[date] = [];
-                byDate[date].push(w);
+            // Group by date, but track original indices
+            const workoutsByDate = {};
+            workouts.forEach((w, index) => {
+                const dateStr = new Date(w.date).toDateString();
+                if (!workoutsByDate[dateStr]) {
+                    workoutsByDate[dateStr] = [];
+                }
+                workoutsByDate[dateStr].push({ ...w, originalIndex: index });
             });
             
-            const dates = Object.keys(byDate).sort((a, b) => new Date(b) - new Date(a)).slice(0, 20);
+            const dates = Object.keys(workoutsByDate).sort((a, b) => new Date(b) - new Date(a)).slice(0, 20);
             
             container.innerHTML = dates.map(dateStr => {
-                const workoutsOnDay = byDate[dateStr];
+                const workoutsOnDay = workoutsByDate[dateStr];
                 const totalVolume = workoutsOnDay.reduce((sum, w) => {
                     return sum + w.sets.reduce((s, set) => s + set.weight * set.reps, 0);
                 }, 0);
@@ -1144,28 +1146,107 @@
                         w.sets[0].weight : `${Math.min(...w.sets.map(s => s.weight))}-${Math.max(...w.sets.map(s => s.weight))}`;
                     
                     return `
-                        <div class="exercise-row">
+                        <div class="exercise-row" data-workout-index="${w.originalIndex}">
                             <div class="exercise-name">${w.exercise}</div>
                             <div class="exercise-details">${setCount} × ${repRange} @ ${weightRange} lbs</div>
                         </div>
                     `;
                 }).join('');
                 
+                // Use first workout's index for date operations
+                const firstWorkoutIndex = workoutsOnDay[0].originalIndex;
+                
                 return `
-                    <div class="workout-card">
+                    <div class="workout-card" data-date="${dateStr}">
                         <div class="workout-header">
                             <div class="workout-date">${new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
                             <div class="workout-volume">${totalVolume.toLocaleString()} lbs</div>
                         </div>
                         <div>${exerciseRows}</div>
                         <div class="edit-actions">
-                            <button class="edit-btn">Edit Date</button>
-                            <button class="edit-btn">Edit Sets</button>
-                            <button class="edit-btn danger">Delete</button>
+                            <button class="edit-btn" onclick="editWorkoutDate('${dateStr}')">Edit Date</button>
+                            <button class="edit-btn" onclick="editWorkoutSets(${firstWorkoutIndex})">Edit Sets</button>
+                            <button class="edit-btn danger" onclick="deleteWorkoutDay('${dateStr}')">Delete</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+        
+        function editWorkoutDate(dateStr) {
+            const newDateStr = prompt('Enter new date (MM/DD/YYYY):', new Date(dateStr).toLocaleDateString('en-US'));
+            if (!newDateStr) return;
+            
+            try {
+                const newDate = new Date(newDateStr);
+                if (isNaN(newDate.getTime())) throw new Error('Invalid date');
+                
+                // Update all workouts on this day
+                workouts.forEach(w => {
+                    if (new Date(w.date).toDateString() === dateStr) {
+                        w.date = newDate.toISOString();
+                    }
+                });
+                
+                localStorage.setItem('workouts', JSON.stringify(workouts));
+                renderWorkoutHistory();
+                renderCalendar();
+                alert('Date updated!');
+            } catch (err) {
+                alert('Invalid date format. Please use MM/DD/YYYY');
+            }
+        }
+        
+        function editWorkoutSets(workoutIndex) {
+            const workout = workouts[workoutIndex];
+            if (!workout) return;
+            
+            const currentSets = workout.sets.map((s, i) => 
+                `Set ${i + 1}: ${s.weight} lbs × ${s.reps} reps`
+            ).join('\n');
+            
+            const newSetsStr = prompt(
+                `Edit sets for ${workout.exercise}\n\nCurrent sets:\n${currentSets}\n\nEnter new sets (one per line, format: weight x reps):\nExample: 225 x 5`,
+                workout.sets.map(s => `${s.weight} x ${s.reps}`).join('\n')
+            );
+            
+            if (!newSetsStr) return;
+            
+            try {
+                const newSets = newSetsStr.trim().split('\n').map(line => {
+                    const match = line.match(/(\d+\.?\d*)\s*x\s*(\d+)/i);
+                    if (!match) throw new Error('Invalid format');
+                    return {
+                        weight: parseFloat(match[1]),
+                        reps: parseInt(match[2])
+                    };
+                });
+                
+                if (newSets.length === 0) throw new Error('No sets entered');
+                
+                workout.sets = newSets;
+                localStorage.setItem('workouts', JSON.stringify(workouts));
+                renderWorkoutHistory();
+                alert('Sets updated!');
+            } catch (err) {
+                alert('Invalid format. Use: weight x reps (e.g., 225 x 5)');
+            }
+        }
+        
+        function deleteWorkoutDay(dateStr) {
+            const workoutsOnDay = workouts.filter(w => new Date(w.date).toDateString() === dateStr);
+            const exerciseList = workoutsOnDay.map(w => w.exercise).join(', ');
+            
+            if (!confirm(`Delete all workouts from ${new Date(dateStr).toLocaleDateString()}?\n\nExercises: ${exerciseList}\n\nThis cannot be undone.`)) {
+                return;
+            }
+            
+            // Remove all workouts from this day
+            workouts = workouts.filter(w => new Date(w.date).toDateString() !== dateStr);
+            localStorage.setItem('workouts', JSON.stringify(workouts));
+            renderWorkoutHistory();
+            renderCalendar();
+            alert('Workouts deleted!');
         }
         
         // Edit toggle
