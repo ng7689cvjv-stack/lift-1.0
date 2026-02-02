@@ -1742,16 +1742,19 @@
             const newDateInput = document.getElementById('new-date-input').value;
             if (!newDateInput) return;
             
-            const newDate = new Date(newDateInput);
+            const newDate = new Date(newDateInput + 'T00:00:00'); // Parse as local time
             
             // Update all workouts on this day
             workouts.forEach(w => {
                 if (new Date(w.date).toDateString() === currentEditDate) {
-                    w.date = newDate.toISOString();
+                    // Set to noon local time to avoid timezone issues
+                    const localDate = new Date(newDateInput + 'T12:00:00');
+                    w.date = localDate.toISOString();
                 }
             });
             
             localStorage.setItem('workouts', JSON.stringify(workouts));
+            currentEditDate = null; // Reset after saving
             closeModal('date');
             renderWorkoutHistory();
             renderCalendar();
