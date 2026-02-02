@@ -1422,7 +1422,19 @@
                 const header = document.createElement('div');
                 header.className = 'exercise-group-header';
                 header.textContent = family;
-                header.onclick = () => group.classList.toggle('expanded');
+                header.onclick = () => {
+                    const isExpanded = group.classList.contains('expanded');
+                    
+                    // Close all groups
+                    document.querySelectorAll('.exercise-group').forEach(g => {
+                        g.classList.remove('expanded');
+                    });
+                    
+                    // Open clicked group if it wasn't already open
+                    if (!isExpanded) {
+                        group.classList.add('expanded');
+                    }
+                };
                 
                 const variationsContainer = document.createElement('div');
                 variationsContainer.className = 'exercise-variations';
