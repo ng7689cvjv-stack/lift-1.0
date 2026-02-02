@@ -359,13 +359,23 @@
         }
         
         .calendar-nav-btn {
-            padding: 8px 16px;
+            width: 40px;
+            height: 40px;
             background: var(--phthalo);
             border: none;
             border-radius: 8px;
             color: #ffffff;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+        }
+        
+        .calendar-nav-btn:hover {
+            background: var(--phthalo-light);
         }
         
         .calendar-grid {
@@ -797,6 +807,69 @@
             }
         }
         
+        /* Mobile: slide up from bottom */
+        @media (max-width: 640px) {
+            .modal-overlay {
+                align-items: flex-end;
+                padding: 0;
+            }
+            
+            .modal {
+                border-radius: 20px 20px 0 0;
+                max-height: 90vh;
+                animation: modalSlideUp 0.3s ease;
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .modal.date-modal {
+                max-height: auto;
+            }
+            
+            .modal-header {
+                padding: 20px;
+            }
+            
+            .modal-body {
+                padding: 20px;
+                overflow-x: hidden;
+            }
+            
+            .modal-footer {
+                padding: 16px 20px;
+            }
+            
+            .modal-title {
+                font-size: 22px;
+            }
+            
+            .form-group {
+                margin-bottom: 16px;
+            }
+            
+            .form-input {
+                padding: 12px 14px;
+                font-size: 16px !important;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .modal-btn {
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+            
+            @keyframes modalSlideUp {
+                from {
+                    transform: translateY(100%);
+                }
+                to {
+                    transform: translateY(0);
+                }
+            }
+        }
+        
         .modal-header {
             padding: 24px 28px;
             border-bottom: 1px solid #e5e7eb;
@@ -927,6 +1000,43 @@
             font-family: 'IBM Plex Mono', monospace;
             color: var(--text-secondary);
             margin-bottom: 16px;
+        }
+        
+        /* Exercise Selector List */
+        .exercise-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .exercise-selector-item {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .exercise-selector-item:hover {
+            border-color: var(--phthalo);
+            background: rgba(13, 59, 54, 0.03);
+        }
+        
+        .exercise-selector-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        
+        .exercise-selector-sets {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--text-secondary);
+            font-size: 13px;
         }
         
         /* Set Editor */
@@ -1188,7 +1298,7 @@
     
     <!-- Edit Date Modal -->
     <div id="date-modal" class="modal-overlay">
-        <div class="modal">
+        <div class="modal date-modal">
             <div class="modal-header">
                 <div class="modal-title">Edit Workout Date</div>
                 <button class="modal-close" onclick="closeModal('date')">×</button>
@@ -1206,6 +1316,19 @@
             <div class="modal-footer">
                 <button class="modal-btn modal-btn-cancel" onclick="closeModal('date')">Cancel</button>
                 <button class="modal-btn modal-btn-primary" onclick="saveDate()">Save Date</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Exercise Selector Modal -->
+    <div id="exercise-selector-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Select Exercise to Edit</div>
+                <button class="modal-close" onclick="closeModal('exercise-selector')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="exercise-selector" id="exercise-selector-list"></div>
             </div>
         </div>
     </div>
@@ -1446,15 +1569,18 @@
         }
         
         // Calendar
+        // Calendar state
+        let calendarYear = new Date().getFullYear();
+        let calendarMonth = new Date().getMonth();
+        
         function renderCalendar() {
             const container = document.getElementById('calendar-container');
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
             
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const prevLastDay = new Date(year, month, 0);
+            const firstDay = new Date(calendarYear, calendarMonth, 1);
+            const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+            const prevLastDay = new Date(calendarYear, calendarMonth, 0);
+            
+            const today = new Date();
             
             const workoutDates = new Set();
             workouts.forEach(w => {
@@ -1464,7 +1590,13 @@
             
             let html = `
                 <div class="calendar-header">
+                    <div class="calendar-nav">
+                        <button class="calendar-nav-btn" onclick="changeMonth(-1)">‹</button>
+                    </div>
                     <div class="calendar-title">${firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</div>
+                    <div class="calendar-nav">
+                        <button class="calendar-nav-btn" onclick="changeMonth(1)">›</button>
+                    </div>
                 </div>
                 <div class="calendar-grid">
                     <div class="calendar-day-name">Sun</div>
@@ -1484,8 +1616,8 @@
             
             // Current month days
             for (let day = 1; day <= lastDay.getDate(); day++) {
-                const date = new Date(year, month, day);
-                const isToday = date.toDateString() === now.toDateString();
+                const date = new Date(calendarYear, calendarMonth, day);
+                const isToday = date.toDateString() === today.toDateString();
                 const hasWorkout = workoutDates.has(date.toDateString());
                 
                 let classes = 'calendar-day';
@@ -1497,6 +1629,20 @@
             
             html += '</div>';
             container.innerHTML = html;
+        }
+        
+        function changeMonth(direction) {
+            calendarMonth += direction;
+            
+            if (calendarMonth > 11) {
+                calendarMonth = 0;
+                calendarYear++;
+            } else if (calendarMonth < 0) {
+                calendarMonth = 11;
+                calendarYear--;
+            }
+            
+            renderCalendar();
         }
         
         // Workout History
@@ -1612,7 +1758,34 @@
         }
         
         // Edit Sets Modal
-        function editWorkoutSets(workoutIndex) {
+        function editWorkoutSets(firstWorkoutIndex) {
+            // Get the date of this workout
+            const dateStr = new Date(workouts[firstWorkoutIndex].date).toDateString();
+            
+            // Get all workouts from this day
+            const workoutsOnDay = workouts
+                .map((w, index) => ({ workout: w, index }))
+                .filter(({ workout }) => new Date(workout.date).toDateString() === dateStr);
+            
+            // If only one exercise, edit directly
+            if (workoutsOnDay.length === 1) {
+                openSetsEditor(workoutsOnDay[0].index);
+                return;
+            }
+            
+            // Multiple exercises - show selector
+            const selectorContainer = document.getElementById('exercise-selector-list');
+            selectorContainer.innerHTML = workoutsOnDay.map(({ workout, index }) => `
+                <div class="exercise-selector-item" onclick="openSetsEditor(${index}); closeModal('exercise-selector');">
+                    <div class="exercise-selector-name">${workout.exercise}</div>
+                    <div class="exercise-selector-sets">${workout.sets.length} sets</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('exercise-selector-modal').classList.add('active');
+        }
+        
+        function openSetsEditor(workoutIndex) {
             currentEditWorkoutIndex = workoutIndex;
             const workout = workouts[workoutIndex];
             if (!workout) return;
