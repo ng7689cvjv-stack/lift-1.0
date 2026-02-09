@@ -1938,7 +1938,6 @@
             const prs = {};
             
             mainFamilies.forEach(family => {
-                let bestE1RM = 0;
                 let bestWeight = 0;
                 let bestReps = 0;
                 let bestDate = null;
@@ -1947,9 +1946,8 @@
                 workouts.forEach(w => {
                     if (getExerciseFamily(w.exercise) === family) {
                         w.sets.forEach(set => {
-                            const e1rm = calculate1RM(set.weight, set.reps);
-                            if (e1rm && e1rm > bestE1RM) {
-                                bestE1RM = e1rm;
+                            // Track heaviest weight, regardless of reps
+                            if (set.weight > bestWeight) {
                                 bestWeight = set.weight;
                                 bestReps = set.reps;
                                 bestDate = w.date;
@@ -1959,9 +1957,10 @@
                     }
                 });
                 
-                if (bestE1RM > 0) {
+                if (bestWeight > 0) {
+                    const e1rm = calculate1RM(bestWeight, bestReps);
                     prs[family] = {
-                        e1rm: Math.round(bestE1RM),
+                        e1rm: e1rm ? Math.round(e1rm) : bestWeight,
                         weight: bestWeight,
                         reps: bestReps,
                         date: bestDate,
@@ -2143,43 +2142,43 @@
                 
                 if (familyWorkouts.length === 0) return;
                 
-                let bestE1RM = 0;
                 let bestWeight = 0;
                 let bestReps = 0;
                 let bestDate = null;
                 let bestVariation = null;
-                const e1rmHistory = [];
+                const weightHistory = [];
                 
                 familyWorkouts.forEach(workout => {
-                    let maxE1RMThisWorkout = 0;
+                    let maxWeightThisWorkout = 0;
                     
                     workout.sets.forEach(set => {
-                        const e1rm = calculate1RM(set.weight, set.reps);
-                        if (e1rm && e1rm > bestE1RM) {
-                            bestE1RM = e1rm;
+                        // Track heaviest weight overall
+                        if (set.weight > bestWeight) {
                             bestWeight = set.weight;
                             bestReps = set.reps;
                             bestDate = workout.date;
                             bestVariation = workout.exercise;
                         }
-                        if (e1rm && e1rm > maxE1RMThisWorkout) {
-                            maxE1RMThisWorkout = e1rm;
+                        // Track max weight for this workout
+                        if (set.weight > maxWeightThisWorkout) {
+                            maxWeightThisWorkout = set.weight;
                         }
                     });
                     
-                    if (maxE1RMThisWorkout > 0) {
-                        e1rmHistory.push(Math.round(maxE1RMThisWorkout));
+                    if (maxWeightThisWorkout > 0) {
+                        weightHistory.push(maxWeightThisWorkout);
                     }
                 });
                 
-                if (bestE1RM > 0) {
+                if (bestWeight > 0) {
+                    const e1rm = calculate1RM(bestWeight, bestReps);
                     liftData[family] = {
-                        e1rm: Math.round(bestE1RM),
+                        e1rm: e1rm ? Math.round(e1rm) : bestWeight,
                         weight: bestWeight,
                         reps: bestReps,
                         date: bestDate,
                         variation: bestVariation,
-                        history: e1rmHistory.slice(-8)
+                        history: weightHistory.slice(-8)
                     };
                 }
             });
