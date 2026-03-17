@@ -1223,6 +1223,7 @@
         
         .set-input-group {
             flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             gap: 4px;
@@ -1237,14 +1238,22 @@
         }
         
         .set-input {
-            padding: 10px 12px;
+            width: 100%;
+            min-width: 0;
+            padding: 12px 8px;
             background: white;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 16px;
+            font-size: 18px;
             text-align: center;
             color: var(--text-primary);
+            -moz-appearance: textfield;
+        }
+
+        .set-input::-webkit-outer-spin-button,
+        .set-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
         }
         
         .set-input:focus {
@@ -1254,8 +1263,8 @@
         }
         
         .set-delete {
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             background: transparent;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
@@ -1266,7 +1275,7 @@
             justify-content: center;
             flex-shrink: 0;
             transition: all 0.2s;
-            font-size: 18px;
+            font-size: 20px;
             padding: 0;
         }
         
@@ -2098,12 +2107,21 @@
             
             // Multiple exercises - show selector
             const selectorContainer = document.getElementById('exercise-selector-list');
-            selectorContainer.innerHTML = workoutsOnDay.map(({ workout, index }) => `
+            selectorContainer.innerHTML = workoutsOnDay.map(({ workout, index }) => {
+                const sets = workout.sets;
+                const wMin = Math.min(...sets.map(s => s.weight));
+                const wMax = Math.max(...sets.map(s => s.weight));
+                const rMin = Math.min(...sets.map(s => s.reps));
+                const rMax = Math.max(...sets.map(s => s.reps));
+                const w = wMin === wMax ? `${wMin}` : `${wMin}–${wMax}`;
+                const r = rMin === rMax ? `${rMin}` : `${rMin}–${rMax}`;
+                const summary = `${sets.length} × ${r} @ ${w} lbs`;
+                return `
                 <div class="exercise-selector-item" onclick="openSetsEditor(${index}); closeModal('exercise-selector');">
                     <div class="exercise-selector-name">${workout.exercise}</div>
-                    <div class="exercise-selector-sets">${workout.sets.length} sets</div>
+                    <div class="exercise-selector-sets">${summary}</div>
                 </div>
-            `).join('');
+            `}).join('');
             
             document.getElementById('exercise-selector-modal').classList.add('active');
         }
@@ -2172,7 +2190,9 @@
         function renderSetsEditor(sets) {
             const container = document.getElementById('sets-list');
             container.innerHTML = '';
-            
+
+            let focusCount = 0;
+
             sets.forEach((set, index) => {
                 const setItem = document.createElement('div');
                 setItem.className = 'set-item';
@@ -2181,24 +2201,35 @@
                     <div class="set-inputs">
                         <div class="set-input-group">
                             <div class="set-input-label">Weight (lbs)</div>
-                            <input type="number" class="set-input" data-index="${index}" data-field="weight" value="${set.weight}" step="5">
+                            <input type="number" inputmode="decimal" class="set-input" data-index="${index}" data-field="weight" value="${set.weight}" step="5">
                         </div>
                         <div class="set-input-group">
                             <div class="set-input-label">Reps</div>
-                            <input type="number" class="set-input" data-index="${index}" data-field="reps" value="${set.reps}" step="1">
+                            <input type="number" inputmode="numeric" class="set-input" data-index="${index}" data-field="reps" value="${set.reps}" step="1">
                         </div>
                     </div>
                     <button class="set-delete" onclick="deleteSet(${index})">×</button>
                 `;
                 container.appendChild(setItem);
             });
-            
-            // Add Set button
+
+            // Add Set button — hidden while any input is focused
             const addBtn = document.createElement('button');
             addBtn.className = 'add-set-btn';
             addBtn.textContent = '+ Add Set';
             addBtn.onclick = addSet;
             container.appendChild(addBtn);
+
+            container.querySelectorAll('.set-input').forEach(input => {
+                input.addEventListener('focus', () => {
+                    focusCount++;
+                    addBtn.style.display = 'none';
+                });
+                input.addEventListener('blur', () => {
+                    focusCount = Math.max(0, focusCount - 1);
+                    if (focusCount === 0) addBtn.style.display = '';
+                });
+            });
         }
         
         function deleteSet(index) {
