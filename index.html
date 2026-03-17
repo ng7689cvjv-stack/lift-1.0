@@ -1061,6 +1061,50 @@
         .form-group {
             margin-bottom: 24px;
         }
+
+        .rename-exercise-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--slate);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .rename-exercise-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .rename-exercise-current {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--phthalo);
+        }
+
+        .rename-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 2px solid var(--phthalo);
+            border-radius: 8px;
+            color: var(--phthalo);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .rename-btn:active {
+            background: rgba(13, 59, 54, 0.08);
+        }
         
         .form-label {
             display: block;
@@ -1446,11 +1490,31 @@
                 <button class="modal-close" onclick="closeModal('sets')">×</button>
             </div>
             <div class="modal-body">
+                <div class="rename-exercise-info">
+                    <div>
+                        <div class="rename-exercise-label">Exercise</div>
+                        <div class="rename-exercise-current" id="edit-exercise-display"></div>
+                    </div>
+                    <button class="rename-btn" onclick="openExerciseRenameModal()">Change</button>
+                </div>
                 <div class="set-list" id="sets-list"></div>
             </div>
             <div class="modal-footer">
                 <button class="modal-btn modal-btn-cancel" onclick="closeModal('sets')">Cancel</button>
                 <button class="modal-btn modal-btn-primary" onclick="saveSets()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Exercise Modal -->
+    <div id="rename-exercise-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Change Exercise</div>
+                <button class="modal-close" onclick="closeModal('rename-exercise')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="exercise-groups" id="rename-exercise-groups"></div>
             </div>
         </div>
     </div>
@@ -2048,11 +2112,61 @@
             currentEditWorkoutIndex = workoutIndex;
             const workout = workouts[workoutIndex];
             if (!workout) return;
-            
-            document.getElementById('sets-modal-title').textContent = `Edit ${workout.exercise} Sets`;
-            
+
+            document.getElementById('sets-modal-title').textContent = `Edit Sets`;
+            document.getElementById('edit-exercise-display').textContent = workout.exercise;
+
             renderSetsEditor(workout.sets);
             document.getElementById('sets-modal').classList.add('active');
+        }
+
+        function openExerciseRenameModal() {
+            const container = document.getElementById('rename-exercise-groups');
+            container.innerHTML = '';
+            const currentExercise = workouts[currentEditWorkoutIndex]?.exercise;
+
+            Object.entries(exerciseFamilies).forEach(([family, variations]) => {
+                const group = document.createElement('div');
+                group.className = 'exercise-group';
+
+                const header = document.createElement('div');
+                header.className = 'exercise-group-header';
+                header.textContent = family;
+                header.onclick = () => {
+                    const isExpanded = group.classList.contains('expanded');
+                    container.querySelectorAll('.exercise-group').forEach(g => g.classList.remove('expanded'));
+                    if (!isExpanded) group.classList.add('expanded');
+                };
+
+                const variationsContainer = document.createElement('div');
+                variationsContainer.className = 'exercise-variations';
+
+                variations.forEach(variation => {
+                    const btn = document.createElement('button');
+                    btn.className = 'variation-btn';
+                    if (variation === currentExercise) {
+                        btn.classList.add('selected');
+                        group.classList.add('expanded');
+                    }
+                    btn.textContent = variation;
+                    btn.onclick = () => renameExercise(variation);
+                    variationsContainer.appendChild(btn);
+                });
+
+                group.appendChild(header);
+                group.appendChild(variationsContainer);
+                container.appendChild(group);
+            });
+
+            document.getElementById('rename-exercise-modal').classList.add('active');
+        }
+
+        function renameExercise(variation) {
+            workouts[currentEditWorkoutIndex].exercise = variation;
+            localStorage.setItem('workouts', JSON.stringify(workouts));
+            document.getElementById('edit-exercise-display').textContent = variation;
+            closeModal('rename-exercise');
+            renderWorkoutHistory();
         }
         
         function renderSetsEditor(sets) {
