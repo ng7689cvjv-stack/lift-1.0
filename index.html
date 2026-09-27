@@ -6,13 +6,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lift">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>Lift - Workout Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
         :root {
             --slate: #f8f6f3;
@@ -1251,8 +1251,12 @@
             <div class="date-display">Progress Analysis</div>
             
             <h2>Weekly Volume</h2>
-            <div class="volume-chart-container">
+            <div class="volume-chart-container" id="volume-chart-container">
                 <canvas id="volume-chart"></canvas>
+            </div>
+            <div class="empty-state" id="volume-empty" style="display: none;">
+                <h3>No Data Yet</h3>
+                <p>Start logging workouts to see volume trends</p>
             </div>
             
             <h2>Lift Progress</h2>
@@ -1392,16 +1396,61 @@
             return exercise; // Return itself if not found
         }
         
+        // Escape user-controlled text before inserting into innerHTML
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // YYYY-MM-DD in local time (toISOString would shift to UTC)
+        function toLocalDateKey(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // Parse YYYY-MM-DD as local midnight (new Date('YYYY-MM-DD') parses as UTC)
+        function fromLocalDateKey(key) {
+            const [y, m, d] = key.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function loadJSON(key, fallback) {
+            try {
+                return JSON.parse(localStorage.getItem(key)) || fallback;
+            } catch (err) {
+                return fallback;
+            }
+        }
+
         // Storage
-        let workouts = JSON.parse(localStorage.getItem('workouts')) || [];
-        let todayWorkout = [];
+        let workouts = loadJSON('workouts', []);
+        let todayWorkout = loadJSON('todayWorkout', []);
         let selectedExercise = null;
-        
+
+        function saveWorkouts() {
+            localStorage.setItem('workouts', JSON.stringify(workouts));
+        }
+
+        // In-progress workout is saved on every change so it survives the app being closed
+        function saveTodayWorkout() {
+            localStorage.setItem('todayWorkout', JSON.stringify(todayWorkout));
+        }
+
         // Initialize
         renderExerciseGroups();
         updateDate();
         renderNav();
         updateDataInfo();
+        if (todayWorkout.length > 0) {
+            document.getElementById('current-workout').style.display = 'block';
+            renderTodayWorkout();
+        }
         
         // Current date
         function updateDate() {
@@ -1483,7 +1532,8 @@
                 reps,
                 sets
             });
-            
+            saveTodayWorkout();
+
             document.getElementById('current-workout').style.display = 'block';
             renderTodayWorkout();
             
@@ -1502,8 +1552,8 @@
                 item.innerHTML = `
                     <div class="workout-exercise-content">
                         <div class="exercise-info">
-                            <h4>${ex.exercise}</h4>
-                            <small>${getExerciseFamily(ex.exercise)}</small>
+                            <h4>${escapeHtml(ex.exercise)}</h4>
+                            <small>${escapeHtml(getExerciseFamily(ex.exercise))}</small>
                         </div>
                         <div class="exercise-stats">${ex.sets} × ${ex.reps} @ ${ex.weight} lbs</div>
                     </div>
@@ -1531,9 +1581,10 @@
                 });
             });
             
-            localStorage.setItem('workouts', JSON.stringify(workouts));
-            
+            saveWorkouts();
+
             todayWorkout = [];
+            saveTodayWorkout();
             document.getElementById('current-workout').style.display = 'none';
             
             alert('Workout saved!');
@@ -1693,7 +1744,7 @@
                     
                     return `
                         <div class="exercise-row" data-workout-index="${w.originalIndex}">
-                            <div class="exercise-name">${w.exercise}</div>
+                            <div class="exercise-name">${escapeHtml(w.exercise)}</div>
                             <div class="exercise-details">${setCount} × ${repRange} @ ${weightRange} lbs</div>
                         </div>
                     `;
@@ -1701,9 +1752,10 @@
                 
                 // Use first workout's index for date operations
                 const firstWorkoutIndex = workoutsOnDay[0].originalIndex;
-                
+                const editMode = document.getElementById('edit-toggle').classList.contains('active');
+
                 return `
-                    <div class="workout-card" data-date="${dateStr}">
+                    <div class="workout-card${editMode ? ' edit-mode' : ''}" data-date="${dateStr}">
                         <div class="workout-header">
                             <div class="workout-date">${new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
                             <div class="workout-volume">${totalVolume.toLocaleString()} lbs</div>
@@ -1744,28 +1796,27 @@
             document.getElementById('current-date-display').textContent = 
                 date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
             
-            document.getElementById('new-date-input').value = 
-                date.toISOString().split('T')[0];
-            
+            document.getElementById('new-date-input').value = toLocalDateKey(date);
+
             document.getElementById('date-modal').classList.add('active');
         }
-        
+
         function saveDate() {
             const newDateInput = document.getElementById('new-date-input').value;
             if (!newDateInput) return;
-            
-            const newDate = new Date(newDateInput + 'T00:00:00'); // Parse as local time
-            
+
+            // Set to noon local time to avoid timezone issues
+            const newDate = fromLocalDateKey(newDateInput);
+            newDate.setHours(12, 0, 0, 0);
+
             // Update all workouts on this day
             workouts.forEach(w => {
                 if (new Date(w.date).toDateString() === currentEditDate) {
-                    // Set to noon local time to avoid timezone issues
-                    const localDate = new Date(newDateInput + 'T12:00:00');
-                    w.date = localDate.toISOString();
+                    w.date = newDate.toISOString();
                 }
             });
-            
-            localStorage.setItem('workouts', JSON.stringify(workouts));
+
+            saveWorkouts();
             currentEditDate = null; // Reset after saving
             closeModal('date');
             renderWorkoutHistory();
@@ -1792,7 +1843,7 @@
             const selectorContainer = document.getElementById('exercise-selector-list');
             selectorContainer.innerHTML = workoutsOnDay.map(({ workout, index }) => `
                 <div class="exercise-selector-item" onclick="openSetsEditor(${index}); closeModal('exercise-selector');">
-                    <div class="exercise-selector-name">${workout.exercise}</div>
+                    <div class="exercise-selector-name">${escapeHtml(workout.exercise)}</div>
                     <div class="exercise-selector-sets">${workout.sets.length} sets</div>
                 </div>
             `).join('');
@@ -1800,15 +1851,31 @@
             document.getElementById('exercise-selector-modal').classList.add('active');
         }
         
+        // Working copy of the sets being edited; only written back on Save
+        let editingSets = [];
+
         function openSetsEditor(workoutIndex) {
             currentEditWorkoutIndex = workoutIndex;
             const workout = workouts[workoutIndex];
             if (!workout) return;
-            
+
             document.getElementById('sets-modal-title').textContent = `Edit ${workout.exercise} Sets`;
-            
-            renderSetsEditor(workout.sets);
+
+            editingSets = workout.sets.map(set => ({ ...set }));
+            renderSetsEditor(editingSets);
             document.getElementById('sets-modal').classList.add('active');
+        }
+
+        // Copy typed values into the working copy so re-rendering doesn't discard them
+        function syncSetInputs() {
+            document.querySelectorAll('#sets-list .set-input').forEach(input => {
+                const index = parseInt(input.dataset.index);
+                const field = input.dataset.field;
+                const value = field === 'weight' ? parseFloat(input.value) : parseInt(input.value);
+                if (editingSets[index]) {
+                    editingSets[index][field] = value;
+                }
+            });
         }
         
         function renderSetsEditor(sets) {
@@ -1844,37 +1911,37 @@
         }
         
         function deleteSet(index) {
-            const workout = workouts[currentEditWorkoutIndex];
-            if (workout.sets.length === 1) {
+            if (editingSets.length === 1) {
                 alert('Cannot delete the last set. Delete the entire workout instead.');
                 return;
             }
-            workout.sets.splice(index, 1);
-            renderSetsEditor(workout.sets);
+            syncSetInputs();
+            editingSets.splice(index, 1);
+            renderSetsEditor(editingSets);
         }
-        
+
         function addSet() {
-            const workout = workouts[currentEditWorkoutIndex];
-            const lastSet = workout.sets[workout.sets.length - 1];
-            workout.sets.push({ weight: lastSet.weight, reps: lastSet.reps });
-            renderSetsEditor(workout.sets);
+            syncSetInputs();
+            const lastSet = editingSets[editingSets.length - 1];
+            editingSets.push({ weight: lastSet.weight, reps: lastSet.reps });
+            renderSetsEditor(editingSets);
         }
-        
+
         function saveSets() {
-            const workout = workouts[currentEditWorkoutIndex];
-            
-            // Update sets from inputs
-            document.querySelectorAll('.set-input').forEach(input => {
-                const index = parseInt(input.dataset.index);
-                const field = input.dataset.field;
-                const value = field === 'weight' ? parseFloat(input.value) : parseInt(input.value);
-                
-                if (workout.sets[index]) {
-                    workout.sets[index][field] = value;
-                }
-            });
-            
-            localStorage.setItem('workouts', JSON.stringify(workouts));
+            syncSetInputs();
+
+            const invalid = editingSets.some(set =>
+                !Number.isFinite(set.weight) || set.weight < 0 ||
+                !Number.isFinite(set.reps) || set.reps <= 0);
+            if (invalid) {
+                alert('Every set needs a weight and at least 1 rep');
+                return;
+            }
+
+            workouts[currentEditWorkoutIndex].sets = editingSets;
+            editingSets = [];
+
+            saveWorkouts();
             closeModal('sets');
             renderWorkoutHistory();
         }
@@ -1893,8 +1960,8 @@
                 `You are about to permanently delete this workout from ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.`;
             
             const exerciseList = document.getElementById('delete-exercise-list');
-            exerciseList.innerHTML = workoutsOnDay.map(w => 
-                `<li>${w.exercise} - ${w.sets.length} sets</li>`
+            exerciseList.innerHTML = workoutsOnDay.map(w =>
+                `<li>${escapeHtml(w.exercise)} - ${w.sets.length} sets</li>`
             ).join('');
             
             document.getElementById('delete-volume-display').innerHTML = 
@@ -1905,7 +1972,7 @@
         
         function confirmDelete() {
             workouts = workouts.filter(w => new Date(w.date).toDateString() !== currentEditDate);
-            localStorage.setItem('workouts', JSON.stringify(workouts));
+            saveWorkouts();
             closeModal('delete');
             renderWorkoutHistory();
             renderCalendar();
@@ -2002,7 +2069,7 @@
                             <div class="pr-stat">
                                 <div class="pr-label">Current PR</div>
                                 <div class="pr-value">${pr.weight} × ${pr.reps}</div>
-                                <div class="pr-variant">${pr.variation}</div>
+                                <div class="pr-variant">${escapeHtml(pr.variation)}</div>
                             </div>
                             <div class="pr-stat">
                                 <div class="pr-label">Est. 1RM</div>
@@ -2016,61 +2083,69 @@
         
         // Trends
         let volumeChart = null;
-        
+        let liftCharts = [];
+        let chartLoadAttempts = 0;
+
         function renderTrends() {
             if (typeof Chart === 'undefined') {
-                setTimeout(renderTrends, 200);
+                // Chart.js may still be loading; give up after ~10s (e.g. offline before first cache)
+                if (chartLoadAttempts++ < 50) {
+                    setTimeout(renderTrends, 200);
+                }
                 return;
             }
+            chartLoadAttempts = 0;
             renderWeeklyVolume();
             renderLiftCards();
         }
-        
+
+        function weekStartKey(date) {
+            const weekStart = new Date(date);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            return toLocalDateKey(weekStart);
+        }
+
         function renderWeeklyVolume() {
             const canvas = document.getElementById('volume-chart');
-            if (!canvas) return;
-            
-            if (workouts.length === 0) {
-                canvas.parentElement.innerHTML = '<div class="empty-state"><h3>No Data Yet</h3><p>Start logging workouts to see volume trends</p></div>';
-                return;
-            }
-            
+            const chartContainer = document.getElementById('volume-chart-container');
+            const emptyState = document.getElementById('volume-empty');
+
             if (volumeChart) {
                 volumeChart.destroy();
                 volumeChart = null;
             }
-            
+
+            // Toggle rather than overwrite, so the canvas is still there once data exists
+            const hasData = workouts.length > 0;
+            chartContainer.style.display = hasData ? '' : 'none';
+            emptyState.style.display = hasData ? 'none' : '';
+            if (!hasData) return;
+
             // Group by week
             const weeklyData = {};
             const now = new Date();
-            
+
             for (let i = 5; i >= 0; i--) {
-                const weekStart = new Date(now);
-                weekStart.setDate(now.getDate() - now.getDay() - (i * 7));
-                weekStart.setHours(0, 0, 0, 0);
-                const weekKey = weekStart.toISOString().split('T')[0];
-                weeklyData[weekKey] = 0;
+                const d = new Date(now);
+                d.setDate(now.getDate() - i * 7);
+                weeklyData[weekStartKey(d)] = 0;
             }
-            
+
             workouts.forEach(w => {
-                const date = new Date(w.date);
-                const weekStart = new Date(date);
-                weekStart.setDate(date.getDate() - date.getDay());
-                weekStart.setHours(0, 0, 0, 0);
-                const weekKey = weekStart.toISOString().split('T')[0];
-                
+                const weekKey = weekStartKey(new Date(w.date));
+
                 if (weeklyData.hasOwnProperty(weekKey)) {
                     w.sets.forEach(set => {
                         weeklyData[weekKey] += set.weight * set.reps;
                     });
                 }
             });
-            
+
             const weeks = Object.keys(weeklyData).sort();
             const volumes = weeks.map(week => weeklyData[week]);
-            
+
             const labels = weeks.map(weekStart => {
-                const start = new Date(weekStart);
+                const start = fromLocalDateKey(weekStart);
                 const end = new Date(start);
                 end.setDate(start.getDate() + 6);
                 
@@ -2127,7 +2202,11 @@
         function renderLiftCards() {
             const container = document.getElementById('lift-cards-container');
             const mainFamilies = Object.keys(exerciseFamilies);
-            
+
+            // Destroy previous mini charts so they don't pile up on every visit
+            liftCharts.forEach(chart => chart.destroy());
+            liftCharts = [];
+
             if (workouts.length === 0) {
                 container.innerHTML = '<div class="empty-state"><h3>No Lifts Yet</h3><p>Start logging to see progress</p></div>';
                 return;
@@ -2208,40 +2287,7 @@
                 }
                 
                 const chartId = `chart-${family.replace(/\s+/g, '-').toLowerCase()}`;
-                
-                setTimeout(() => {
-                    const canvas = document.getElementById(chartId);
-                    if (!canvas) return;
-                    
-                    new Chart(canvas, {
-                        type: 'line',
-                        data: {
-                            labels: data.history.map((_, i) => ''),
-                            datasets: [{
-                                data: data.history,
-                                borderColor: '#115248',
-                                backgroundColor: 'rgba(17, 82, 72, 0.1)',
-                                borderWidth: 2,
-                                tension: 0.4,
-                                fill: true,
-                                pointRadius: 0
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: { display: false },
-                                x: { display: false }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { enabled: false }
-                            }
-                        }
-                    });
-                }, 100);
-                
+
                 return `
                     <div class="lift-card">
                         <div class="lift-header">
@@ -2252,7 +2298,7 @@
                             <div class="lift-stat">
                                 <div class="stat-label">Current PR</div>
                                 <div class="stat-value">${data.weight} × ${data.reps}</div>
-                                <div class="stat-variant">${data.variation}</div>
+                                <div class="stat-variant">${escapeHtml(data.variation)}</div>
                             </div>
                             <div class="lift-stat">
                                 <div class="stat-label">Est. 1RM</div>
@@ -2265,6 +2311,40 @@
                     </div>
                 `;
             }).join('');
+
+            // Canvases now exist in the DOM, so charts can be created directly
+            Object.entries(liftData).forEach(([family, data]) => {
+                const canvas = document.getElementById(`chart-${family.replace(/\s+/g, '-').toLowerCase()}`);
+                if (!canvas) return;
+
+                liftCharts.push(new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: data.history.map(() => ''),
+                        datasets: [{
+                            data: data.history,
+                            borderColor: '#115248',
+                            backgroundColor: 'rgba(17, 82, 72, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { display: false },
+                            x: { display: false }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                }));
+            });
         }
         
         // Settings
@@ -2291,72 +2371,108 @@
             `;
         }
         
+        function downloadFile(contents, type, extension) {
+            const blob = new Blob([contents], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-data-${toLocalDateKey(new Date())}.${extension}`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function csvField(value) {
+            const str = String(value);
+            return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+        }
+
         // Export JSON
         document.getElementById('export-json-btn').onclick = () => {
             const data = {
                 workouts,
                 exportDate: new Date().toISOString()
             };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `workout-data-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
+
+            downloadFile(JSON.stringify(data, null, 2), 'application/json', 'json');
         };
-        
+
         // Export CSV
         document.getElementById('export-csv-btn').onclick = () => {
             let csv = 'Date,Exercise,Set,Weight,Reps,Volume\n';
-            
+
             workouts.forEach(w => {
                 w.sets.forEach((set, i) => {
-                    const date = new Date(w.date).toLocaleDateString();
+                    const date = toLocalDateKey(new Date(w.date));
                     const volume = set.weight * set.reps;
-                    csv += `${date},${w.exercise},${i + 1},${set.weight},${set.reps},${volume}\n`;
+                    csv += `${date},${csvField(w.exercise)},${i + 1},${set.weight},${set.reps},${volume}\n`;
                 });
             });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `workout-data-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
+
+            downloadFile(csv, 'text/csv', 'csv');
         };
-        
+
         // Import JSON
         document.getElementById('import-json-btn').onclick = () => {
             document.getElementById('import-file-input').click();
         };
-        
+
+        function isValidWorkout(w) {
+            return w && typeof w === 'object' &&
+                typeof w.exercise === 'string' && w.exercise.length > 0 &&
+                typeof w.date === 'string' && !isNaN(new Date(w.date)) &&
+                Array.isArray(w.sets) && w.sets.length > 0 &&
+                w.sets.every(s => s && Number.isFinite(s.weight) && Number.isFinite(s.reps));
+        }
+
         document.getElementById('import-file-input').onchange = (e) => {
             const file = e.target.files[0];
+            // Reset so choosing the same file again still fires onchange
+            e.target.value = '';
             if (!file) return;
-            
+
             const reader = new FileReader();
             reader.onload = (event) => {
+                let imported;
                 try {
                     const data = JSON.parse(event.target.result);
-                    workouts = data.workouts || [];
-                    localStorage.setItem('workouts', JSON.stringify(workouts));
-                    alert('Data imported successfully!');
-                    updateDataInfo();
+                    imported = Array.isArray(data) ? data : data.workouts;
                 } catch (err) {
-                    alert('Error importing data: ' + err.message);
+                    alert('That file isn\'t valid JSON: ' + err.message);
+                    return;
                 }
+
+                if (!Array.isArray(imported)) {
+                    alert('No workouts found in that file.');
+                    return;
+                }
+
+                const valid = imported.filter(isValidWorkout);
+                const skipped = imported.length - valid.length;
+                if (valid.length === 0) {
+                    alert('No valid workouts found in that file.');
+                    return;
+                }
+
+                let message = `Replace your ${workouts.length} saved entries with ${valid.length} from this file?`;
+                if (skipped > 0) message += `\n\n${skipped} invalid entries will be skipped.`;
+                message += '\n\nTip: export your current data first if you want a backup.';
+                if (!confirm(message)) return;
+
+                workouts = valid;
+                saveWorkouts();
+                alert('Data imported successfully!');
+                updateDataInfo();
             };
             reader.readAsText(file);
         };
-        
+
         // Clear data
         document.getElementById('clear-data-btn').onclick = () => {
             if (!confirm('Are you sure? This cannot be undone.')) return;
             if (!confirm('Really delete ALL workout data? This is permanent!')) return;
-            
+
             workouts = [];
-            localStorage.setItem('workouts', JSON.stringify(workouts));
+            saveWorkouts();
             alert('All data cleared');
             updateDataInfo();
         };
@@ -2364,7 +2480,7 @@
         // Register service worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                navigator.serviceWorker.register('service-worker.js')
                     .then(reg => console.log('SW registered'))
                     .catch(err => console.log('SW error:', err));
             });

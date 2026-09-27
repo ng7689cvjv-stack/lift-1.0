@@ -2,7 +2,7 @@
   "name": "Let's Lift",
   "short_name": "Lift",
   "description": "Offline workout tracker for strength training",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#2d2d34",
   "theme_color": "#2d2d34",
@@ -20,5 +20,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "scope": "./"
 }
