@@ -37,7 +37,7 @@
             font-family: 'Space Grotesk', sans-serif;
             line-height: 1.6;
             min-height: 100vh;
-            padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            padding-bottom: calc(140px + env(safe-area-inset-bottom));
             padding-top: env(safe-area-inset-top);
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
@@ -156,6 +156,10 @@
         }
         
         .exercise-group-header {
+            width: 100%;
+            border: none;
+            font-family: 'Space Grotesk', sans-serif;
+            text-align: left;
             padding: 16px 20px;
             background: linear-gradient(90deg, var(--phthalo) 0%, var(--phthalo-dark) 100%);
             color: #ffffff;
@@ -211,50 +215,6 @@
             color: #ffffff;
         }
         
-        /* Inputs */
-        .input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            margin: 24px 0;
-        }
-        
-        .input-wrapper {
-            position: relative;
-        }
-        
-        .input-label {
-            position: absolute;
-            top: -8px;
-            left: 12px;
-            background: var(--slate);
-            padding: 0 8px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .input {
-            width: 100%;
-            padding: 16px;
-            background: #ffffff;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 20px;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-        
-        .input:focus {
-            outline: none;
-            border-color: var(--phthalo);
-            background: rgba(13, 59, 54, 0.03);
-            box-shadow: 0 0 0 4px rgba(13, 59, 54, 0.1);
-        }
-        
         /* Buttons */
         .btn {
             width: 100%;
@@ -267,17 +227,7 @@
             font-weight: 600;
             letter-spacing: 1px;
             cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-grey {
-            background: linear-gradient(135deg, var(--grey) 0%, var(--grey-dark) 100%);
-            box-shadow: 0 4px 12px rgba(82, 82, 91, 0.25);
-        }
-        
-        .btn-grey:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(82, 82, 91, 0.35);
+            transition: all 0.2s ease;
         }
         
         .btn-phthalo {
@@ -285,50 +235,473 @@
             box-shadow: 0 4px 12px rgba(13, 59, 54, 0.25);
         }
         
-        .btn-phthalo:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(13, 59, 54, 0.35);
+        .btn-phthalo:active {
+            transform: scale(0.98);
         }
         
-        /* Today's Workout */
-        #current-workout {
-            margin-top: 32px;
-            display: none;
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--phthalo);
+            color: var(--phthalo);
+            padding: 14px;
+            font-size: 16px;
         }
         
-        .workout-exercise-item {
-            position: relative;
-            overflow: hidden;
+        /* Quick start */
+        .quick-start {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             margin-bottom: 12px;
+        }
+        
+        .quick-card {
+            background: #ffffff;
+            border: 2px solid transparent;
+            border-radius: 14px;
+            padding: 14px;
+            text-align: left;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            min-height: 88px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        
+        .quick-card:active {
+            border-color: var(--phthalo);
+        }
+        
+        .quick-card.in-session {
+            opacity: 0.5;
+        }
+        
+        .quick-card-name {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        
+        .quick-card-last {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+        
+        .quick-card-next {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--phthalo);
+        }
+        
+        .other-exercise-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        
+        /* Session entries */
+        .entry {
             background: #ffffff;
             border-radius: 16px;
+            margin-bottom: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
         }
         
-        .workout-exercise-content {
-            padding: 20px;
+        .entry.active {
+            border: 2px solid var(--phthalo);
+        }
+        
+        .entry-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            cursor: pointer;
         }
         
-        .exercise-info h4 {
-            font-size: 18px;
+        .entry-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+        
+        .entry-summary {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+        
+        .entry-summary.complete {
+            color: var(--phthalo);
             font-weight: 600;
-            margin-bottom: 4px;
+        }
+        
+        .entry-body {
+            padding: 0 18px 18px;
+        }
+        
+        .entry-last {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+        }
+        
+        /* Work weight / sets / reps controls */
+        .work-controls {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        
+        .weight-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .step-btn {
+            width: 52px;
+            height: 52px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            border: none;
+            background: var(--phthalo);
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            touch-action: manipulation;
+        }
+        
+        .step-btn:active {
+            background: var(--phthalo-light);
+        }
+        
+        .step-btn.small {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            background: #e5e7eb;
             color: var(--text-primary);
         }
         
-        .exercise-info small {
+        .weight-input {
+            flex: 1;
+            min-width: 0;
+            height: 52px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #ffffff;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 28px;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-primary);
+        }
+        
+        .weight-input:focus {
+            outline: none;
+            border-color: var(--phthalo);
+        }
+        
+        .plates {
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
             font-size: 12px;
+            color: var(--text-secondary);
+            margin: 6px 0 12px;
+        }
+        
+        .sets-reps-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .mini-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        
+        .mini-stepper-value {
+            text-align: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.1;
+        }
+        
+        .mini-stepper-value small {
+            display: block;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Set rows */
+        .set-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .set-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 56px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            background: #ffffff;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        
+        .set-row.warmup {
+            background: #f9fafb;
+        }
+        
+        .set-row.done {
+            border-color: var(--phthalo);
+            background: rgba(13, 59, 54, 0.06);
+        }
+        
+        .set-check {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 18px;
+        }
+        
+        .set-row.done .set-check {
+            background: var(--phthalo);
+            border-color: var(--phthalo);
+        }
+        
+        .set-tag {
+            width: 44px;
+            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: var(--text-secondary);
         }
         
-        .exercise-stats {
-            font-family: 'IBM Plex Mono', monospace;
+        .set-row:not(.warmup) .set-tag {
             color: var(--phthalo);
-            font-size: 16px;
+        }
+        
+        .set-value {
+            flex: 1;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 20px;
             font-weight: 600;
+        }
+        
+        .set-row.warmup .set-value {
+            font-size: 17px;
+            font-weight: 400;
+        }
+        
+        .set-edit-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            padding: 8px 4px 8px 12px;
+            cursor: pointer;
+        }
+        
+        .set-editor {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            margin-top: -2px;
+            background: #f3f4f6;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .set-editor .mini-stepper {
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        .set-editor-remove {
+            background: transparent;
+            border: none;
+            color: #dc2626;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .entry-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .entry-action {
+            flex: 1;
+            padding: 12px 8px;
+            background: transparent;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .entry-action.primary {
+            border-color: var(--phthalo);
+            color: var(--phthalo);
+            font-weight: 600;
+        }
+        
+        .entry-action.danger {
+            flex: 0 0 auto;
+            color: #dc2626;
+        }
+        
+        .empty-hint {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+            padding: 12px;
+        }
+        
+        #finish-workout-btn {
+            margin: 8px 0 8px;
+        }
+        
+        /* Rest timer */
+        .rest-bar {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(76px + env(safe-area-inset-bottom));
+            background: var(--text-primary);
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 8px 8px 8px 18px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            z-index: 999;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+        }
+        
+        .rest-bar.visible {
+            display: flex;
+        }
+        
+        .rest-bar button {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #ffffff;
+            border-radius: 999px;
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .toast {
+            position: fixed;
+            top: calc(16px + env(safe-area-inset-top));
+            left: 50%;
+            transform: translate(-50%, -150%);
+            background: var(--phthalo);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 999px;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.25s ease;
+            z-index: 1100;
+        }
+        
+        .toast.visible {
+            transform: translate(-50%, 0);
+        }
+        
+        /* Warm-up pattern settings */
+        .ladder-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .ladder-row input {
+            width: 90px;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .ladder-row span {
+            color: var(--text-secondary);
+        }
+        
+        .settings-note {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .set-number.warmup {
+            background: #cbd5e1;
+            color: var(--text-primary);
+            font-size: 12px;
         }
         
         /* Calendar */
@@ -1196,31 +1569,15 @@
             <h1>LET'S LIFT</h1>
             <div class="date-display" id="current-date"></div>
             
-            <h2>Select Exercise</h2>
-            <div class="exercise-groups" id="exercise-groups"></div>
-            
-            <div class="input-group">
-                <div class="input-wrapper">
-                    <div class="input-label">Weight</div>
-                    <input type="number" id="weight-input" class="input" placeholder="0" step="5">
-                </div>
-                <div class="input-wrapper">
-                    <div class="input-label">Reps</div>
-                    <input type="number" id="reps-input" class="input" placeholder="0" step="1">
-                </div>
-                <div class="input-wrapper">
-                    <div class="input-label">Sets</div>
-                    <input type="number" id="sets-input" class="input" placeholder="0" step="1" value="3">
-                </div>
-            </div>
-            
-            <button class="btn btn-grey" id="add-exercise-btn">Add Exercise</button>
-            
             <div id="current-workout">
-                <h2>Today's Workout</h2>
-                <div id="workout-exercises"></div>
+                <div id="session-entries"></div>
                 <button class="btn btn-phthalo" id="finish-workout-btn">Finish Workout</button>
             </div>
+            
+            <h2 id="quick-start-title">Start a Lift</h2>
+            <div class="quick-start" id="quick-start"></div>
+            <button class="other-exercise-btn" id="other-exercise-btn">Other exercise…</button>
+            <div class="exercise-groups" id="exercise-groups" style="display: none;"></div>
         </div>
         
         <!-- CALENDAR PAGE -->
@@ -1278,6 +1635,16 @@
                 </div>
             </div>
             
+            <div class="settings-section">
+                <h3>Warm-up Pattern</h3>
+                <p class="settings-note">Your warm-up sets are built from this list. Steps up to 90% of the work weight are included.</p>
+                <div id="ladder-editor"></div>
+                <div class="settings-buttons">
+                    <button class="add-set-btn" id="ladder-add-btn">+ Add step</button>
+                    <button class="settings-btn" id="ladder-reset-btn">Reset to default</button>
+                </div>
+            </div>
+
             <div class="settings-section">
                 <h3>Workout Stats</h3>
                 <div class="settings-info" id="data-info"></div>
@@ -1354,6 +1721,31 @@
         </div>
     </div>
     
+    <!-- Finish Workout Modal (shown when some sets aren't ticked) -->
+    <div id="finish-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Finish Workout</div>
+                <button class="modal-close" onclick="closeModal('finish')">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="finish-modal-text"></p>
+            </div>
+            <div class="modal-footer" style="flex-wrap: wrap;">
+                <button class="modal-btn modal-btn-cancel" onclick="finishWorkout(false)">Only ticked sets</button>
+                <button class="modal-btn modal-btn-primary" onclick="finishWorkout(true)">Log all as planned</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+    
+    <!-- Rest timer -->
+    <div class="rest-bar" id="rest-bar">
+        <span>Rest <strong id="rest-time">0:00</strong></span>
+        <button id="rest-dismiss" aria-label="Hide rest timer">×</button>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div id="delete-modal" class="modal-overlay">
         <div class="modal">
@@ -1430,27 +1822,546 @@
 
         // Storage
         let workouts = loadJSON('workouts', []);
-        let todayWorkout = loadJSON('todayWorkout', []);
-        let selectedExercise = null;
-
+        
         function saveWorkouts() {
             localStorage.setItem('workouts', JSON.stringify(workouts));
         }
-
-        // In-progress workout is saved on every change so it survives the app being closed
-        function saveTodayWorkout() {
-            localStorage.setItem('todayWorkout', JSON.stringify(todayWorkout));
+        
+        // Plates & warm-ups
+        const BAR_WEIGHT = 45;
+        const WEIGHT_STEP = 5;
+        const PLATES = [45, 25, 10, 5, 2.5];
+        const DEFAULT_LADDER = [
+            { weight: 45, reps: 5 },
+            { weight: 45, reps: 5 },
+            { weight: 95, reps: 5 },
+            { weight: 135, reps: 5 },
+            { weight: 185, reps: 5 },
+            { weight: 225, reps: 3 },
+            { weight: 275, reps: 2 },
+            { weight: 315, reps: 1 },
+            { weight: 365, reps: 1 },
+            { weight: 405, reps: 1 }
+        ];
+        // Warm-up steps heavier than this share of the work weight are left out
+        const WARMUP_MAX_RATIO = 0.9;
+        
+        let settings = loadJSON('settings', {});
+        if (!Array.isArray(settings.warmupLadder)) {
+            settings.warmupLadder = DEFAULT_LADDER.map(step => ({ ...step }));
         }
-
-        // Initialize
-        renderExerciseGroups();
-        updateDate();
-        renderNav();
-        updateDataInfo();
-        if (todayWorkout.length > 0) {
-            document.getElementById('current-workout').style.display = 'block';
-            renderTodayWorkout();
+        
+        function saveSettings() {
+            localStorage.setItem('settings', JSON.stringify(settings));
         }
+        
+        function describePlates(weight) {
+            if (!weight) return '';
+            if (weight < BAR_WEIGHT) return 'Lighter than the bar';
+            if (weight === BAR_WEIGHT) return 'Empty bar';
+            
+            let remaining = (weight - BAR_WEIGHT) / 2;
+            const plates = [];
+            PLATES.forEach(plate => {
+                while (remaining >= plate - 0.001) {
+                    plates.push(plate);
+                    remaining -= plate;
+                }
+            });
+            const leftover = remaining > 0.001 ? ` (+${Math.round(remaining * 20) / 10} lbs can't be loaded)` : '';
+            return `${plates.join(' + ')} per side${leftover}`;
+        }
+        
+        function warmupSetsFor(workWeight) {
+            return settings.warmupLadder
+                .filter(step => step.weight > 0 && step.weight <= workWeight * WARMUP_MAX_RATIO)
+                .sort((a, b) => a.weight - b.weight)
+                .map(step => ({ weight: step.weight, reps: step.reps, warmup: true, done: false }));
+        }
+        
+        // History helpers
+        function workSetsOf(sets) {
+            const work = sets.filter(s => !s.warmup);
+            return work.length ? work : sets;
+        }
+        
+        function topSetsOf(sets) {
+            const work = workSetsOf(sets);
+            const top = Math.max(...work.map(s => s.weight));
+            return work.filter(s => s.weight === top);
+        }
+        
+        function lastSessionOf(exercise) {
+            let last = null;
+            workouts.forEach(w => {
+                if (w.exercise === exercise && (!last || new Date(w.date) >= new Date(last.date))) {
+                    last = w;
+                }
+            });
+            return last;
+        }
+        
+        // "3×5 @ 225" for the heaviest sets, or "5,5,4 @ 225" when reps differ
+        function summarizeSets(sets) {
+            const topSets = topSetsOf(sets);
+            const reps = topSets.map(s => s.reps);
+            const repText = Math.min(...reps) === Math.max(...reps) ? `${topSets.length}×${reps[0]}` : reps.join(',');
+            return `${repText} @ ${topSets[0].weight}`;
+        }
+        
+        function setsDetail(sets) {
+            const warmups = sets.filter(s => s.warmup).length;
+            const others = workSetsOf(sets).length - topSetsOf(sets).length;
+            let text = `${summarizeSets(sets)} lbs`;
+            if (warmups) text += ` · +${warmups} warm-up`;
+            if (others) text += ` · +${others} other`;
+            return text;
+        }
+        
+        function shortDate(date) {
+            return new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+        
+        // Suggest today's plan from the last session: add 5 lbs if every top set hit its reps
+        function suggestionFor(exercise) {
+            const last = lastSessionOf(exercise);
+            if (!last) return null;
+            const topSets = topSetsOf(last.sets);
+            const targetReps = Math.max(...topSets.map(s => s.reps));
+            const allHit = topSets.every(s => s.reps === targetReps);
+            return {
+                last,
+                weight: topSets[0].weight + (allHit ? WEIGHT_STEP : 0),
+                reps: targetReps,
+                sets: topSets.length
+            };
+        }
+        
+        // In-progress workout, saved on every change so it survives the app being closed
+        let session = loadSession();
+        let editingSet = null; // { entry, set } whose inline editor is open
+        
+        function emptySession() {
+            return { entries: [], active: null, lastTickAt: null };
+        }
+        
+        function loadSession() {
+            const saved = loadJSON('session', null);
+            if (saved && Array.isArray(saved.entries)) return saved;
+            
+            // Carry over an unfinished workout from the old entry form
+            const old = loadJSON('todayWorkout', []);
+            const migrated = emptySession();
+            migrated.entries = old.map(ex => ({
+                exercise: ex.exercise,
+                workWeight: ex.weight,
+                workReps: ex.reps,
+                workSets: ex.sets,
+                sets: Array.from({ length: ex.sets }, () => ({ weight: ex.weight, reps: ex.reps, warmup: false, done: true }))
+            }));
+            localStorage.setItem('session', JSON.stringify(migrated));
+            localStorage.removeItem('todayWorkout');
+            return migrated;
+        }
+        
+        function saveSession() {
+            localStorage.setItem('session', JSON.stringify(session));
+        }
+        
+        function createEntry(exercise) {
+            const suggestion = suggestionFor(exercise);
+            const entry = {
+                exercise,
+                workWeight: suggestion ? suggestion.weight : null,
+                workReps: suggestion ? suggestion.reps : 5,
+                workSets: suggestion ? suggestion.sets : 3,
+                sets: []
+            };
+            rebuildSets(entry);
+            return entry;
+        }
+        
+        // Regenerate unticked sets from the plan. Ticked sets, and work sets edited by hand, are kept.
+        function rebuildSets(entry) {
+            if (!entry.workWeight) {
+                entry.sets = entry.sets.filter(s => s.done);
+                return;
+            }
+            
+            const doneWarmups = entry.sets.filter(s => s.warmup && s.done);
+            const warmups = doneWarmups.concat(warmupSetsFor(entry.workWeight).slice(doneWarmups.length));
+            
+            const work = entry.sets
+                .filter(s => !s.warmup)
+                .map(s => (s.done || s.custom) ? s : { ...s, weight: entry.workWeight, reps: entry.workReps });
+            while (work.length < entry.workSets) {
+                work.push({ weight: entry.workWeight, reps: entry.workReps, warmup: false, done: false });
+            }
+            // Drop extra work sets from the end, but never ones already ticked
+            for (let i = work.length - 1; i >= 0 && work.length > entry.workSets; i--) {
+                if (!work[i].done) work.splice(i, 1);
+            }
+            entry.workSets = work.length;
+            
+            entry.sets = warmups.concat(work);
+        }
+        
+        function startExercise(exercise) {
+            let index = session.entries.findIndex(e => e.exercise === exercise);
+            if (index === -1) {
+                session.entries.push(createEntry(exercise));
+                index = session.entries.length - 1;
+            }
+            session.active = index;
+            editingSet = null;
+            document.getElementById('exercise-groups').style.display = 'none';
+            saveSession();
+            renderLog();
+            
+            const entryEl = document.querySelector(`.entry[data-entry="${index}"]`);
+            if (entryEl) entryEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (!session.entries[index].workWeight) {
+                const input = entryEl && entryEl.querySelector('.weight-input');
+                if (input) input.focus();
+            }
+        }
+        
+        // Log page rendering
+        function renderLog() {
+            const hasEntries = session.entries.length > 0;
+            document.getElementById('current-workout').style.display = hasEntries ? '' : 'none';
+            document.getElementById('quick-start-title').textContent = hasEntries ? 'Next Lift' : 'Start a Lift';
+            renderSessionEntries();
+            renderQuickStart();
+            updateRestBar();
+        }
+        
+        function quickStartExercises() {
+            // Show the variations used in the last 60 days; otherwise the family's main lift
+            const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
+            const recent = new Set(workouts.filter(w => new Date(w.date).getTime() >= cutoff).map(w => w.exercise));
+            const list = [];
+            Object.entries(exerciseFamilies).forEach(([family, variations]) => {
+                const used = variations.filter(v => recent.has(v));
+                list.push(...(used.length ? used : [family]));
+            });
+            return list;
+        }
+        
+        function renderQuickStart() {
+            const container = document.getElementById('quick-start');
+            container.innerHTML = quickStartExercises().map(exercise => {
+                const inSession = session.entries.some(e => e.exercise === exercise);
+                const suggestion = suggestionFor(exercise);
+                const last = suggestion
+                    ? `${summarizeSets(suggestion.last.sets)} · ${shortDate(suggestion.last.date)}`
+                    : 'No history yet';
+                const next = inSession ? 'In progress' : (suggestion ? `Today: ${suggestion.weight} lbs` : 'Tap to start');
+                return `
+                    <button class="quick-card${inSession ? ' in-session' : ''}" data-exercise="${escapeHtml(exercise)}">
+                        <span class="quick-card-name">${escapeHtml(exercise)}</span>
+                        <span class="quick-card-last">${last}</span>
+                        <span class="quick-card-next">${next}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+        
+        document.getElementById('quick-start').addEventListener('click', (e) => {
+            const card = e.target.closest('[data-exercise]');
+            if (card) startExercise(card.dataset.exercise);
+        });
+        
+        document.getElementById('other-exercise-btn').onclick = () => {
+            const groups = document.getElementById('exercise-groups');
+            groups.style.display = groups.style.display === 'none' ? '' : 'none';
+        };
+        
+        function stepper(action, value, label, extra = '') {
+            return `
+                <div class="mini-stepper">
+                    <button class="step-btn small" data-action="${action}" data-delta="-1" ${extra} aria-label="Fewer ${label}">−</button>
+                    <div class="mini-stepper-value">${value}<small>${label}</small></div>
+                    <button class="step-btn small" data-action="${action}" data-delta="1" ${extra} aria-label="More ${label}">+</button>
+                </div>
+            `;
+        }
+        
+        function renderSessionEntries() {
+            const container = document.getElementById('session-entries');
+            
+            container.innerHTML = session.entries.map((entry, ei) => {
+                const doneCount = entry.sets.filter(s => s.done).length;
+                const complete = entry.sets.length > 0 && doneCount === entry.sets.length;
+                const isActive = session.active === ei;
+                const summary = entry.workWeight
+                    ? `${complete ? '✓ ' : ''}${doneCount}/${entry.sets.length} sets<br>${entry.workSets}×${entry.workReps} @ ${entry.workWeight}`
+                    : 'No weight set';
+                
+                let body = '';
+                if (isActive) {
+                    const suggestion = suggestionFor(entry.exercise);
+                    const lastText = suggestion
+                        ? `Last time: ${setsDetail(suggestion.last.sets)} (${shortDate(suggestion.last.date)})`
+                        : 'First time logging this lift. Enter your work weight.';
+                    
+                    let workNumber = 0;
+                    const rows = entry.sets.map((set, si) => {
+                        const tag = set.warmup ? 'Warm' : `Set ${++workNumber}`;
+                        const isEditing = editingSet && editingSet.entry === ei && editingSet.set === si;
+                        const editor = isEditing ? `
+                            <div class="set-editor">
+                                ${stepper('set-weight', set.weight, 'lbs', `data-set="${si}"`)}
+                                ${stepper('set-reps', set.reps, 'reps', `data-set="${si}"`)}
+                                <button class="set-editor-remove" data-action="remove-set" data-set="${si}">Remove set</button>
+                            </div>
+                        ` : '';
+                        return `
+                            <div class="set-row${set.warmup ? ' warmup' : ''}${set.done ? ' done' : ''}" data-action="toggle" data-set="${si}">
+                                <div class="set-check">${set.done ? '✓' : ''}</div>
+                                <div class="set-tag">${tag}</div>
+                                <div class="set-value">${set.weight} × ${set.reps}</div>
+                                <button class="set-edit-btn" data-action="edit-set" data-set="${si}" aria-label="Change this set">⋯</button>
+                            </div>
+                            ${editor}
+                        `;
+                    }).join('');
+                    
+                    body = `
+                        <div class="entry-body">
+                            <div class="entry-last">${lastText}</div>
+                            <div class="work-controls">
+                                <div class="weight-row">
+                                    <button class="step-btn" data-action="weight" data-delta="-${WEIGHT_STEP}" aria-label="Lighter">−</button>
+                                    <input class="weight-input" type="number" inputmode="decimal" step="${WEIGHT_STEP}"
+                                        value="${entry.workWeight || ''}" placeholder="lbs" aria-label="Work weight">
+                                    <button class="step-btn" data-action="weight" data-delta="${WEIGHT_STEP}" aria-label="Heavier">+</button>
+                                </div>
+                                <div class="plates">${describePlates(entry.workWeight)}</div>
+                                <div class="sets-reps-row">
+                                    ${stepper('work-sets', entry.workSets, 'sets')}
+                                    ${stepper('work-reps', entry.workReps, 'reps')}
+                                </div>
+                            </div>
+                            <div class="set-rows">
+                                ${rows || '<div class="empty-hint">Set a work weight to build your sets</div>'}
+                            </div>
+                            <div class="entry-actions">
+                                <button class="entry-action primary" data-action="log-rest">✓ Log rest</button>
+                                <button class="entry-action" data-action="add-set">+ Set</button>
+                                <button class="entry-action danger" data-action="remove-entry" aria-label="Remove ${escapeHtml(entry.exercise)}">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="entry${isActive ? ' active' : ''}" data-entry="${ei}">
+                        <div class="entry-header" data-action="expand">
+                            <div class="entry-title">${escapeHtml(entry.exercise)}</div>
+                            <div class="entry-summary${complete ? ' complete' : ''}">${summary}</div>
+                        </div>
+                        ${body}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+        
+        document.getElementById('session-entries').addEventListener('click', (e) => {
+            const el = e.target.closest('[data-action]');
+            if (!el) return;
+            const ei = Number(el.closest('[data-entry]').dataset.entry);
+            const entry = session.entries[ei];
+            const si = el.dataset.set !== undefined ? Number(el.dataset.set) : null;
+            const set = si !== null ? entry.sets[si] : null;
+            const delta = Number(el.dataset.delta || 0);
+            
+            switch (el.dataset.action) {
+                case 'expand':
+                    session.active = session.active === ei ? null : ei;
+                    editingSet = null;
+                    break;
+                case 'weight':
+                    entry.workWeight = entry.workWeight ? Math.max(WEIGHT_STEP, entry.workWeight + delta) : BAR_WEIGHT;
+                    rebuildSets(entry);
+                    break;
+                case 'work-sets':
+                    entry.workSets = clamp(entry.workSets + delta, 1, 20);
+                    rebuildSets(entry);
+                    break;
+                case 'work-reps':
+                    entry.workReps = clamp(entry.workReps + delta, 1, 50);
+                    rebuildSets(entry);
+                    break;
+                case 'toggle':
+                    set.done = !set.done;
+                    if (set.done) session.lastTickAt = Date.now();
+                    break;
+                case 'edit-set':
+                    editingSet = editingSet && editingSet.entry === ei && editingSet.set === si ? null : { entry: ei, set: si };
+                    break;
+                case 'set-weight':
+                    set.weight = Math.max(0, set.weight + delta * WEIGHT_STEP);
+                    set.custom = true;
+                    break;
+                case 'set-reps':
+                    set.reps = clamp(set.reps + delta, 1, 50);
+                    set.custom = true;
+                    break;
+                case 'remove-set':
+                    entry.sets.splice(si, 1);
+                    if (!set.warmup) entry.workSets = Math.max(0, entry.workSets - 1);
+                    editingSet = null;
+                    break;
+                case 'add-set':
+                    entry.workSets = clamp(entry.workSets + 1, 1, 20);
+                    rebuildSets(entry);
+                    break;
+                case 'log-rest':
+                    entry.sets.forEach(s => { s.done = true; });
+                    session.lastTickAt = Date.now();
+                    break;
+                case 'remove-entry':
+                    if (!confirm(`Remove ${entry.exercise} from this workout?`)) return;
+                    session.entries.splice(ei, 1);
+                    session.active = null;
+                    editingSet = null;
+                    break;
+                default:
+                    return;
+            }
+            
+            saveSession();
+            renderLog();
+        });
+        
+        // Typing a work weight directly (e.g. the first time you log a lift)
+        document.getElementById('session-entries').addEventListener('change', (e) => {
+            if (!e.target.classList.contains('weight-input')) return;
+            const entry = session.entries[Number(e.target.closest('[data-entry]').dataset.entry)];
+            const value = parseFloat(e.target.value);
+            entry.workWeight = value > 0 ? value : null;
+            rebuildSets(entry);
+            saveSession();
+            renderLog();
+        });
+        
+        // Rest timer: counts up from the last ticked set
+        function updateRestBar() {
+            const bar = document.getElementById('rest-bar');
+            const elapsed = session.lastTickAt ? Math.floor((Date.now() - session.lastTickAt) / 1000) : null;
+            const visible = elapsed !== null && session.entries.length > 0 && elapsed < 30 * 60 &&
+                document.getElementById('log-page').classList.contains('active');
+            bar.classList.toggle('visible', visible);
+            if (visible) {
+                document.getElementById('rest-time').textContent =
+                    `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
+            }
+        }
+        
+        document.getElementById('rest-dismiss').onclick = () => {
+            session.lastTickAt = null;
+            saveSession();
+            updateRestBar();
+        };
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('visible');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => toast.classList.remove('visible'), 2500);
+        }
+        
+        // Finish workout
+        document.getElementById('finish-workout-btn').onclick = () => {
+            const pending = session.entries.reduce((n, entry) => n + entry.sets.filter(s => !s.done).length, 0);
+            if (pending === 0) {
+                finishWorkout(false);
+                return;
+            }
+            document.getElementById('finish-modal-text').textContent =
+                `${pending} set${pending === 1 ? ' hasn\'t' : 's haven\'t'} been ticked. Log ${pending === 1 ? 'it' : 'them'} as planned, or save only the sets you ticked?`;
+            document.getElementById('finish-modal').classList.add('active');
+        };
+        
+        function finishWorkout(includePending) {
+            closeModal('finish');
+            const now = new Date().toISOString();
+            const toSave = [];
+            
+            session.entries.forEach(entry => {
+                const sets = entry.sets
+                    .filter(s => includePending || s.done)
+                    .map(s => s.warmup ? { weight: s.weight, reps: s.reps, warmup: true } : { weight: s.weight, reps: s.reps });
+                if (sets.length > 0) {
+                    toSave.push({ date: now, exercise: entry.exercise, sets });
+                }
+            });
+            
+            if (toSave.length === 0) {
+                alert('No sets to save yet. Tick the sets you\'ve done first.');
+                return;
+            }
+            
+            workouts.push(...toSave);
+            saveWorkouts();
+            
+            session = emptySession();
+            editingSet = null;
+            saveSession();
+            renderLog();
+            window.scrollTo(0, 0);
+            showToast('Workout saved 💪');
+        }
+        
+        // Warm-up pattern editor (Settings)
+        function renderLadderEditor() {
+            document.getElementById('ladder-editor').innerHTML = settings.warmupLadder.map((step, i) => `
+                <div class="ladder-row">
+                    <input type="number" inputmode="decimal" data-i="${i}" data-field="weight" value="${step.weight}" aria-label="Warm-up ${i + 1} weight">
+                    <span>lbs ×</span>
+                    <input type="number" inputmode="numeric" data-i="${i}" data-field="reps" value="${step.reps}" aria-label="Warm-up ${i + 1} reps">
+                    <span>reps</span>
+                    <button class="set-delete" data-remove="${i}" aria-label="Remove warm-up ${i + 1}">×</button>
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('ladder-editor').addEventListener('change', (e) => {
+            const input = e.target;
+            const value = input.dataset.field === 'weight' ? parseFloat(input.value) : parseInt(input.value);
+            if (!(value > 0)) {
+                renderLadderEditor();
+                return;
+            }
+            settings.warmupLadder[Number(input.dataset.i)][input.dataset.field] = value;
+            saveSettings();
+        });
+        
+        document.getElementById('ladder-editor').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-remove]');
+            if (!btn) return;
+            settings.warmupLadder.splice(Number(btn.dataset.remove), 1);
+            saveSettings();
+            renderLadderEditor();
+        });
+        
+        document.getElementById('ladder-add-btn').onclick = () => {
+            const last = settings.warmupLadder[settings.warmupLadder.length - 1];
+            settings.warmupLadder.push(last ? { weight: last.weight + 50, reps: last.reps } : { weight: BAR_WEIGHT, reps: 5 });
+            saveSettings();
+            renderLadderEditor();
+        };
+        
+        document.getElementById('ladder-reset-btn').onclick = () => {
+            if (!confirm('Reset your warm-up pattern to the default?')) return;
+            settings.warmupLadder = DEFAULT_LADDER.map(step => ({ ...step }));
+            saveSettings();
+            renderLadderEditor();
+        };
         
         // Current date
         function updateDate() {
@@ -1459,7 +2370,7 @@
             document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
         }
         
-        // Render exercise groups
+        // Render exercise groups ("Other exercise…" picker)
         function renderExerciseGroups() {
             const container = document.getElementById('exercise-groups');
             container.innerHTML = '';
@@ -1468,18 +2379,12 @@
                 const group = document.createElement('div');
                 group.className = 'exercise-group';
                 
-                const header = document.createElement('div');
+                const header = document.createElement('button');
                 header.className = 'exercise-group-header';
                 header.textContent = family;
                 header.onclick = () => {
                     const isExpanded = group.classList.contains('expanded');
-                    
-                    // Close all groups
-                    document.querySelectorAll('.exercise-group').forEach(g => {
-                        g.classList.remove('expanded');
-                    });
-                    
-                    // Open clicked group if it wasn't already open
+                    document.querySelectorAll('.exercise-group').forEach(g => g.classList.remove('expanded'));
                     if (!isExpanded) {
                         group.classList.add('expanded');
                     }
@@ -1492,7 +2397,7 @@
                     const btn = document.createElement('button');
                     btn.className = 'variation-btn';
                     btn.textContent = variation;
-                    btn.onclick = () => selectExercise(variation, group);
+                    btn.onclick = () => startExercise(variation);
                     variationsContainer.appendChild(btn);
                 });
                 
@@ -1502,93 +2407,14 @@
             });
         }
         
-        function selectExercise(exercise, group) {
-            // Remove selected from all
-            document.querySelectorAll('.variation-btn').forEach(b => b.classList.remove('selected'));
-            // Select this one
-            event.target.classList.add('selected');
-            selectedExercise = exercise;
-        }
-        
-        // Add exercise to today's workout
-        document.getElementById('add-exercise-btn').onclick = () => {
-            if (!selectedExercise) {
-                alert('Please select an exercise first');
-                return;
-            }
-            
-            const weight = parseFloat(document.getElementById('weight-input').value);
-            const reps = parseInt(document.getElementById('reps-input').value);
-            const sets = parseInt(document.getElementById('sets-input').value);
-            
-            if (!weight || !reps || !sets) {
-                alert('Please enter weight, reps, and sets');
-                return;
-            }
-            
-            todayWorkout.push({
-                exercise: selectedExercise,
-                weight,
-                reps,
-                sets
-            });
-            saveTodayWorkout();
-
-            document.getElementById('current-workout').style.display = 'block';
-            renderTodayWorkout();
-            
-            // Clear inputs
-            document.getElementById('weight-input').value = '';
-            document.getElementById('reps-input').value = '';
-        };
-        
-        function renderTodayWorkout() {
-            const container = document.getElementById('workout-exercises');
-            container.innerHTML = '';
-            
-            todayWorkout.forEach((ex, index) => {
-                const item = document.createElement('div');
-                item.className = 'workout-exercise-item';
-                item.innerHTML = `
-                    <div class="workout-exercise-content">
-                        <div class="exercise-info">
-                            <h4>${escapeHtml(ex.exercise)}</h4>
-                            <small>${escapeHtml(getExerciseFamily(ex.exercise))}</small>
-                        </div>
-                        <div class="exercise-stats">${ex.sets} × ${ex.reps} @ ${ex.weight} lbs</div>
-                    </div>
-                `;
-                container.appendChild(item);
-            });
-        }
-        
-        // Finish workout
-        document.getElementById('finish-workout-btn').onclick = () => {
-            if (todayWorkout.length === 0) return;
-            
-            const now = new Date().toISOString();
-            
-            todayWorkout.forEach(ex => {
-                const sets = [];
-                for (let i = 0; i < ex.sets; i++) {
-                    sets.push({ weight: ex.weight, reps: ex.reps });
-                }
-                
-                workouts.push({
-                    date: now,
-                    exercise: ex.exercise,
-                    sets: sets
-                });
-            });
-            
-            saveWorkouts();
-
-            todayWorkout = [];
-            saveTodayWorkout();
-            document.getElementById('current-workout').style.display = 'none';
-            
-            alert('Workout saved!');
-        };
+        // Initialize
+        renderExerciseGroups();
+        updateDate();
+        renderNav();
+        updateDataInfo();
+        renderLog();
+        renderLadderEditor();
+        setInterval(updateRestBar, 1000);
         
         // Calculate 1RM
         function calculate1RM(weight, reps) {
@@ -1617,7 +2443,9 @@
                     document.getElementById(`${page}-page`).classList.add('active');
                     
                     // Load page content
-                    if (page === 'calendar') {
+                    if (page === 'log') {
+                        renderLog();
+                    } else if (page === 'calendar') {
                         renderCalendar();
                         renderWorkoutHistory();
                     } else if (page === 'prs') {
@@ -1626,7 +2454,9 @@
                         renderTrends();
                     } else if (page === 'settings') {
                         updateDataInfo();
+                        renderLadderEditor();
                     }
+                    updateRestBar();
                 };
             });
         }
@@ -1736,16 +2566,10 @@
                 }, 0);
                 
                 const exerciseRows = workoutsOnDay.map(w => {
-                    const setCount = w.sets.length;
-                    const repRange = Math.min(...w.sets.map(s => s.reps)) === Math.max(...w.sets.map(s => s.reps)) ?
-                        w.sets[0].reps : `${Math.min(...w.sets.map(s => s.reps))}-${Math.max(...w.sets.map(s => s.reps))}`;
-                    const weightRange = Math.min(...w.sets.map(s => s.weight)) === Math.max(...w.sets.map(s => s.weight)) ?
-                        w.sets[0].weight : `${Math.min(...w.sets.map(s => s.weight))}-${Math.max(...w.sets.map(s => s.weight))}`;
-                    
                     return `
                         <div class="exercise-row" data-workout-index="${w.originalIndex}">
                             <div class="exercise-name">${escapeHtml(w.exercise)}</div>
-                            <div class="exercise-details">${setCount} × ${repRange} @ ${weightRange} lbs</div>
+                            <div class="exercise-details">${setsDetail(w.sets)}</div>
                         </div>
                     `;
                 }).join('');
@@ -1886,7 +2710,7 @@
                 const setItem = document.createElement('div');
                 setItem.className = 'set-item';
                 setItem.innerHTML = `
-                    <div class="set-number">${index + 1}</div>
+                    <div class="set-number${set.warmup ? ' warmup' : ''}">${set.warmup ? 'W' : index + 1}</div>
                     <div class="set-inputs">
                         <div class="set-input-group">
                             <div class="set-input-label">Weight (lbs)</div>
@@ -2012,7 +2836,7 @@
                 
                 workouts.forEach(w => {
                     if (getExerciseFamily(w.exercise) === family) {
-                        w.sets.forEach(set => {
+                        workSetsOf(w.sets).forEach(set => {
                             // Track heaviest weight, regardless of reps
                             if (set.weight > bestWeight) {
                                 bestWeight = set.weight;
@@ -2230,7 +3054,7 @@
                 familyWorkouts.forEach(workout => {
                     let maxWeightThisWorkout = 0;
                     
-                    workout.sets.forEach(set => {
+                    workSetsOf(workout.sets).forEach(set => {
                         // Track heaviest weight overall
                         if (set.weight > bestWeight) {
                             bestWeight = set.weight;
@@ -2398,13 +3222,13 @@
 
         // Export CSV
         document.getElementById('export-csv-btn').onclick = () => {
-            let csv = 'Date,Exercise,Set,Weight,Reps,Volume\n';
+            let csv = 'Date,Exercise,Set,Weight,Reps,Volume,Warmup\n';
 
             workouts.forEach(w => {
                 w.sets.forEach((set, i) => {
                     const date = toLocalDateKey(new Date(w.date));
                     const volume = set.weight * set.reps;
-                    csv += `${date},${csvField(w.exercise)},${i + 1},${set.weight},${set.reps},${volume}\n`;
+                    csv += `${date},${csvField(w.exercise)},${i + 1},${set.weight},${set.reps},${volume},${set.warmup ? 'Y' : 'N'}\n`;
                 });
             });
 
