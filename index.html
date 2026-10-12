@@ -1209,6 +1209,7 @@
         
         .set-input-group {
             flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             gap: 4px;
@@ -1223,6 +1224,8 @@
         }
         
         .set-input {
+            width: 100%;
+            min-width: 0;
             padding: 10px 12px;
             background: white;
             border: 1px solid #e5e7eb;
@@ -1477,6 +1480,10 @@
                 <button class="modal-close" onclick="closeModal('sets')">×</button>
             </div>
             <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="sets-exercise-select">Exercise</label>
+                    <select class="form-input" id="sets-exercise-select"></select>
+                </div>
                 <div class="set-list" id="sets-list"></div>
             </div>
             <div class="modal-footer">
@@ -2126,7 +2133,7 @@
             selectorContainer.innerHTML = workoutsOnDay.map(({ workout, index }) => `
                 <div class="exercise-selector-item" onclick="openSetsEditor(${index}); closeModal('exercise-selector');">
                     <div class="exercise-selector-name">${escapeHtml(workout.exercise)}</div>
-                    <div class="exercise-selector-sets">${workout.sets.length} sets</div>
+                    <div class="exercise-selector-sets">${setsDetail(workout.sets)}</div>
                 </div>
             `).join('');
             
@@ -2141,11 +2148,25 @@
             const workout = workouts[workoutIndex];
             if (!workout) return;
 
-            document.getElementById('sets-modal-title').textContent = `Edit ${workout.exercise} Sets`;
+            document.getElementById('sets-modal-title').textContent = 'Edit Sets';
 
+            renderExerciseSelect(workout.exercise);
             editingSets = workout.sets.map(set => ({ ...set }));
             renderSetsEditor(editingSets);
             document.getElementById('sets-modal').classList.add('active');
+        }
+
+        // Lets you fix a set logged under the wrong exercise; applied on Save
+        function renderExerciseSelect(current) {
+            const select = document.getElementById('sets-exercise-select');
+            const known = Object.values(exerciseFamilies).flat().includes(current);
+            select.innerHTML = (known ? '' : `<option>${escapeHtml(current)}</option>`) +
+                Object.entries(exerciseFamilies).map(([family, variations]) => `
+                    <optgroup label="${escapeHtml(family)}">
+                        ${variations.map(v => `<option>${escapeHtml(v)}</option>`).join('')}
+                    </optgroup>
+                `).join('');
+            select.value = current;
         }
 
         // Copy typed values into the working copy so re-rendering doesn't discard them
@@ -2221,6 +2242,7 @@
             }
 
             workouts[currentEditWorkoutIndex].sets = editingSets;
+            workouts[currentEditWorkoutIndex].exercise = document.getElementById('sets-exercise-select').value;
             editingSets = [];
 
             saveWorkouts();
