@@ -1406,6 +1406,12 @@
             font-weight: 600;
         }
         
+        .chat-proposal-row.removing strong,
+        .chat-proposal-row.removing span {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+        
         .chat-proposal-row span {
             font-family: 'IBM Plex Mono', monospace;
             font-size: 14px;
@@ -1447,10 +1453,19 @@
             border-top: 1px solid #e5e7eb;
         }
         
+        .chat-input-row {
+            align-items: flex-end;
+        }
+        
+        /* Wraps long messages and grows up to about five lines (see autosizeChatInput) */
         .chat-input-row .form-input {
             flex: 1;
             width: auto;
             min-width: 0;
+            resize: none;
+            line-height: 1.4;
+            max-height: 140px;
+            overflow-y: auto;
         }
         
         .chat-input-row .modal-btn {
@@ -1715,7 +1730,7 @@
             </div>
             <div class="chat-messages" id="chat-messages"></div>
             <form class="chat-input-row" id="chat-form">
-                <input type="text" class="form-input" id="chat-input" placeholder="bench 185 3x5" autocomplete="off" enterkeyhint="send">
+                <textarea class="form-input" id="chat-input" rows="1" placeholder="bench 185 3x5" autocomplete="off" enterkeyhint="send"></textarea>
                 <button type="submit" class="modal-btn modal-btn-primary" id="chat-send-btn">Send</button>
             </form>
         </div>
@@ -2970,20 +2985,21 @@
             updateDataInfo();
         };
         
-        // Chat logging: type "bench 185 3x5" and Claude proposes entries to add.
+        // Chat logging: type "bench 185 3x5" and Claude proposes entries to add (or fix).
         // Calls the Claude API straight from the browser with the user's own key,
         // which never leaves this device except to go to Anthropic.
         const CHAT_MODEL = 'claude-opus-5-5';
         const API_KEY_STORAGE = 'anthropicApiKey';
 
-        let chatHistory = [];         // Messages API turns; assistant content kept exactly as returned
-        let queuedToolResults = [];   // Answers to Claude's log_exercises calls, sent with the next message
-        let pendingProposal = null;   // { toolUseIds, entries, el } awaiting Add / Cancel
+        let chatHistory = [];         // Messages API turns, append-only; assistant content kept exactly as returned
+        let queuedToolResults = [];   // Answers to Claude's tool calls, sent with the next message
+        let pendingProposal = null;   // { toolUseIds, adds, removes, el } awaiting Save / Cancel
+        let chatRefs = {};            // ref ("t0", "h3") -> logged entry, from the latest context sent to Claude
         let chatBusy = false;
 
         const logExercisesTool = {
             name: 'log_exercises',
-            description: 'Propose lifts to add to the workout log. The app shows the entries to the user, who must tap Add before anything is saved. Each entry is one exercise at one weight and rep count; use separate entries when the weight or reps change between sets.',
+            description: 'Propose lifts to add to the workout log. The app shows the entries to the user, who must confirm before anything is saved. Each entry is one exercise at one weight and rep count; use separate entries when the weight or reps change between sets.',
             strict: true,
             input_schema: {
                 type: 'object',
@@ -3009,52 +3025,80 @@
             }
         };
 
-        function getApiKey() {
-            try {
-                return localStorage.getItem(API_KEY_STORAGE) || '';
-            } catch (err) {
-                return '';
+        const removeEntriesTool = {
+            name: 'remove_entries',
+            description: 'Propose removing logged entries, by the ref shown in the context (like "h3" or "t0"). To fix an entry (wrong day, weight, reps or sets), call remove_entries for the old entry and log_exercises for the corrected one in the same reply. The user confirms before anything changes.',
+            strict: true,
+            input_schema: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['refs'],
+                properties: {
+                    refs: { type: 'array', items: { type: 'string' }, description: 'Refs of the entries to remove' }
+                }
             }
-        }
+        };
 
-        function setApiKey(key) {
-            if (key) {
-                localStorage.setItem(API_KEY_STORAGE, key);
-            } else {
-                localStorage.removeItem(API_KEY_STORAGE);
-            }
-            renderApiKeyStatus();
-            renderChatKeySetup();
-        }
+        // Kept identical for the whole chat: Claude's earlier thinking is only valid
+        // under the same system prompt, so everything that changes goes in each message's context
+        const CHAT_SYSTEM_PROMPT = `You help log strength training in the Lift app. The user tells you what they lifted in plain language and you call log_exercises with structured entries. Weights are in lbs.
 
-        function chatSystemPrompt() {
+Known exercises: ${Object.values(exerciseFamilies).flat().join(', ')}.
+Use the exact known name when the user means one of them ("bench" is Bench Press, "OHP" is Overhead Press, "RDL" is Romanian Deadlift). For anything else, use a short title-case name.
+
+"3x5 @ 225", "225 3x5" and "225 for 3 sets of 5" all mean 3 sets of 5 reps at 225 lbs. If the number of sets isn't given, assume 1.
+Dates: use the calendar in the context to turn "yesterday", "Wednesday" or "9/30" into YYYY-MM-DD. A date without a year is the most recent one that isn't in the future. Log each lift once, on the one day the user means; only use several dates when the user describes lifts on several days.
+If a weight, rep count or day is unclear and the context doesn't settle it, ask one short question instead of guessing. "Same as last time" means the last session in the context.
+When the user says something already logged is wrong, find it in the context by its ref, then call remove_entries for it and, if it should be logged differently, log_exercises with the corrected entry, both in the same reply.
+After calling a tool, don't list the entries in text; the app shows them. Keep any text to a sentence. You only log lifts; answer anything else in a sentence.
+
+Each user message starts with a <context> block that the app adds with the current date and log. The user didn't write it and can't see it.`;
+
+        function chatContext() {
             const now = new Date();
-            const today = `${now.toLocaleDateString('en-US', { weekday: 'long' })} ${toLocalDateKey(now)}`;
-            const known = Object.values(exerciseFamilies).flat().join(', ');
+            const todayKey = toLocalDateKey(now);
+            const dayLabel = (date) => `${date.toLocaleDateString('en-US', { weekday: 'short' })} ${toLocalDateKey(date)}`;
+            chatRefs = {};
 
-            const inProgress = todayWorkout.length
-                ? todayWorkout.map(ex => `- ${ex.exercise}: ${ex.sets} × ${ex.reps} @ ${ex.weight} lbs`).join('\n')
-                : '(nothing yet)';
+            const recentDays = [];
+            for (let i = 1; i <= 14; i++) {
+                recentDays.push(dayLabel(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)));
+            }
+
+            const todayLines = todayWorkout.map((ex, i) => {
+                chatRefs[`t${i}`] = { kind: 'today', item: ex };
+                return `- [t${i}] ${ex.exercise}: ${ex.sets} × ${ex.reps} @ ${ex.weight} lbs`;
+            });
+
+            // Saved entries from the last 30 days, newest first
+            const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+            const recent = workouts
+                .filter(w => new Date(w.date) >= cutoff)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 60);
+            const historyLines = recent.map((w, i) => {
+                chatRefs[`h${i}`] = { kind: 'history', item: w };
+                return `- [h${i}] ${dayLabel(new Date(w.date))} ${w.exercise}: ${setsDetail(w.sets)}`;
+            });
 
             const lastSessions = [...new Set(workouts.map(w => w.exercise))].map(exercise => {
                 const last = lastSessionOf(exercise);
                 return `- ${exercise} on ${toLocalDateKey(new Date(last.date))}: ${setsDetail(last.sets)}`;
             });
 
-            return `You help log strength training in the Lift app. The user tells you what they lifted in plain language and you call log_exercises with structured entries. Weights are in lbs. Today is ${today}.
+            return `<context>
+Today is ${dayLabel(now)}.
+Previous 14 days: ${recentDays.join(', ')}.
 
-Known exercises: ${known}.
-Use the exact known name when the user means one of them ("bench" is Bench Press, "OHP" is Overhead Press, "RDL" is Romanian Deadlift). For anything else, use a short title-case name.
+Today's workout so far (not finished yet):
+${todayLines.length ? todayLines.join('\n') : '(nothing yet)'}
 
-"3x5 @ 225", "225 3x5" and "225 for 3 sets of 5" all mean 3 sets of 5 reps at 225 lbs. If the number of sets isn't given, assume 1.
-If a weight or rep count is missing and the context below doesn't settle it, ask one short question instead of guessing. "Same as last time" means the last session listed below.
-After calling the tool, don't list the entries in text; the app shows them. Keep any text to a sentence. You only log lifts; answer anything else in a sentence.
-
-Today's workout so far:
-${inProgress}
+Saved entries from the last 30 days:
+${historyLines.length ? historyLines.join('\n') : '(none)'}
 
 Last session of each exercise:
-${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
+${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}
+</context>`;
         }
 
         async function callClaude(messages) {
@@ -3074,8 +3118,8 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
                         max_tokens: 4096,
                         output_config: { effort: 'low' },
                         fallbacks: 'default',
-                        system: chatSystemPrompt(),
-                        tools: [logExercisesTool],
+                        system: CHAT_SYSTEM_PROMPT,
+                        tools: [logExercisesTool, removeEntriesTool],
                         messages
                     })
                 });
@@ -3091,6 +3135,24 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
             if (res.status === 429) throw new Error('Too many requests, or the API account is out of credit. Try again in a moment.' + detail);
             if (res.status === 529 || res.status >= 500) throw new Error('Claude is busy right now. Try again in a moment.');
             throw new Error(`Something went wrong talking to Claude${detail}.`);
+        }
+
+        function getApiKey() {
+            try {
+                return localStorage.getItem(API_KEY_STORAGE) || '';
+            } catch (err) {
+                return '';
+            }
+        }
+
+        function setApiKey(key) {
+            if (key) {
+                localStorage.setItem(API_KEY_STORAGE, key);
+            } else {
+                localStorage.removeItem(API_KEY_STORAGE);
+            }
+            renderApiKeyStatus();
+            renderChatKeySetup();
         }
 
         function addChatBubble(role, text) {
@@ -3109,6 +3171,7 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
             const exercise = typeof entry.exercise === 'string' ? entry.exercise.trim() : '';
             const { weight, reps, sets } = entry;
             const date = typeof entry.date === 'string' ? entry.date.trim() : '';
+            const todayKey = toLocalDateKey(new Date());
 
             if (!exercise || exercise.length > 60) return null;
             if (!Number.isFinite(weight) || weight < 0 || weight > entryLimits.weight[1]) return null;
@@ -3116,11 +3179,33 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
             if (!Number.isInteger(sets) || sets < 1 || sets > entryLimits.sets[1]) return null;
             if (date) {
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || toLocalDateKey(fromLocalDateKey(date)) !== date) return null;
-                if (date > toLocalDateKey(new Date())) return null;
+                if (date > todayKey) return null;
             }
 
-            const todayKey = toLocalDateKey(new Date());
             return { exercise, weight, reps, sets, date: date === todayKey ? '' : date };
+        }
+
+        // Turns Claude's tool calls into one proposal, or null if any call is unusable
+        function readToolCalls(toolUses) {
+            const adds = [];
+            const removes = [];
+            for (const block of toolUses) {
+                const input = block.input || {};
+                if (block.name === 'log_exercises' && Array.isArray(input.entries) && input.entries.length) {
+                    const entries = input.entries.map(cleanEntry);
+                    if (!entries.every(Boolean)) return null;
+                    adds.push(...entries);
+                } else if (block.name === 'remove_entries' && Array.isArray(input.refs) && input.refs.length) {
+                    for (const ref of input.refs) {
+                        const found = chatRefs[ref];
+                        if (!found) return null;
+                        if (!removes.includes(found)) removes.push(found);
+                    }
+                } else {
+                    return null;
+                }
+            }
+            return { adds, removes };
         }
 
         function describeEntryDate(date) {
@@ -3128,29 +3213,52 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
             return fromLocalDateKey(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         }
 
-        function renderProposal(entries, toolUseIds) {
+        function describeRemoval(found) {
+            if (found.kind === 'today') {
+                const ex = found.item;
+                return { exercise: ex.exercise, when: 'Today', detail: `${ex.sets} × ${ex.reps} @ ${ex.weight} lbs` };
+            }
+            const w = found.item;
+            return { exercise: w.exercise, when: describeEntryDate(toLocalDateKey(new Date(w.date))), detail: setsDetail(w.sets) };
+        }
+
+        function renderProposal({ adds, removes }, toolUseIds) {
             const container = document.getElementById('chat-messages');
             const el = document.createElement('div');
             el.className = 'chat-proposal';
 
-            const allToday = entries.every(e => !e.date);
-            el.innerHTML = entries.map(e => `
+            const removeRows = removes.map(describeRemoval).map(r => `
+                <div class="chat-proposal-row removing">
+                    <div>
+                        <strong>${escapeHtml(r.exercise)}</strong>
+                        <small class="chat-proposal-date">Remove · ${escapeHtml(r.when)}</small>
+                    </div>
+                    <span>${escapeHtml(r.detail)}</span>
+                </div>
+            `);
+            const addRows = adds.map(e => `
                 <div class="chat-proposal-row">
                     <div>
                         <strong>${escapeHtml(e.exercise)}</strong>
-                        ${allToday ? '' : `<small class="chat-proposal-date">${escapeHtml(describeEntryDate(e.date))}</small>`}
+                        <small class="chat-proposal-date">${removes.length ? 'Add · ' : ''}${escapeHtml(describeEntryDate(e.date))}</small>
                     </div>
                     <span>${e.sets} × ${e.reps} @ ${e.weight} lbs</span>
                 </div>
-            `).join('') + `
+            `);
+
+            let confirmLabel = 'Save';
+            if (!removes.length && adds.every(e => !e.date)) confirmLabel = 'Add to Today';
+            if (!adds.length) confirmLabel = 'Remove';
+
+            el.innerHTML = removeRows.join('') + addRows.join('') + `
                 <div class="chat-proposal-actions">
                     <button class="modal-btn modal-btn-cancel" data-action="cancel">Cancel</button>
-                    <button class="modal-btn modal-btn-primary" data-action="add">${allToday ? "Add to Today" : 'Save'}</button>
+                    <button class="modal-btn modal-btn-primary" data-action="confirm">${confirmLabel}</button>
                 </div>
             `;
 
-            const proposal = { toolUseIds, entries, el };
-            el.querySelector('[data-action="add"]').onclick = () => resolveProposal(proposal, true);
+            const proposal = { toolUseIds, adds, removes, el };
+            el.querySelector('[data-action="confirm"]').onclick = () => resolveProposal(proposal, true);
             el.querySelector('[data-action="cancel"]').onclick = () => resolveProposal(proposal, false);
 
             container.appendChild(el);
@@ -3178,17 +3286,30 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
             if (pendingProposal !== proposal) return;
 
             if (!accepted) {
-                queueToolResults(proposal.toolUseIds, 'The user cancelled. Nothing was saved.');
+                queueToolResults(proposal.toolUseIds, 'The user cancelled. Nothing was changed.');
                 finishProposal(proposal, 'Cancelled', true);
                 return;
             }
 
+            let todayChanged = false;
+            let historyChanged = false;
+            let removed = 0;
+            proposal.removes.forEach(({ kind, item }) => {
+                const list = kind === 'today' ? todayWorkout : workouts;
+                const index = list.indexOf(item);
+                if (index === -1) return; // already removed some other way
+                list.splice(index, 1);
+                removed++;
+                if (kind === 'today') todayChanged = true; else historyChanged = true;
+            });
+
             let addedToday = 0;
             const pastDates = new Set();
-            proposal.entries.forEach(e => {
+            proposal.adds.forEach(e => {
                 if (!e.date) {
                     todayWorkout.push({ exercise: e.exercise, weight: e.weight, reps: e.reps, sets: e.sets });
                     addedToday++;
+                    todayChanged = true;
                 } else {
                     // Noon local, so the entry stays on that day in every time zone math the app does
                     const day = fromLocalDateKey(e.date);
@@ -3199,26 +3320,28 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
                         sets: Array.from({ length: e.sets }, () => ({ weight: e.weight, reps: e.reps }))
                     });
                     pastDates.add(e.date);
+                    historyChanged = true;
                 }
             });
 
-            if (addedToday) {
+            if (todayChanged) {
                 saveTodayWorkout();
                 renderTodayWorkout();
             }
-            if (pastDates.size) {
+            if (historyChanged) {
                 saveWorkouts();
                 updateDataInfo();
             }
 
             const parts = [];
+            if (removed) parts.push(`Removed ${removed} ${removed === 1 ? 'entry' : 'entries'}`);
             if (addedToday) parts.push("Added to today's workout");
             if (pastDates.size) parts.push(`Saved to ${[...pastDates].sort().map(describeEntryDate).join(', ')}`);
-            const summary = parts.join(' · ');
+            const summary = parts.join(' · ') || 'Nothing to change';
 
             queueToolResults(proposal.toolUseIds, `The user confirmed. ${summary}.`);
             finishProposal(proposal, `✓ ${summary}`, false);
-            showToast(addedToday ? "Added to today's workout" : 'Saved');
+            showToast(parts[0] || summary);
         }
 
         async function sendChatMessage(text) {
@@ -3226,13 +3349,16 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
             chatBusy = true;
             document.getElementById('chat-send-btn').disabled = true;
 
-            // Sending something new instead of tapping Add means the proposal wasn't wanted
+            // Sending something new instead of confirming means the proposal wasn't wanted
             if (pendingProposal) {
-                queueToolResults(pendingProposal.toolUseIds, 'The user sent a new message instead of confirming. Nothing was saved.');
-                finishProposal(pendingProposal, 'Not added', true);
+                queueToolResults(pendingProposal.toolUseIds, 'The user sent a new message instead of confirming. Nothing was changed.');
+                finishProposal(pendingProposal, 'Not saved', true);
             }
 
-            const userMessage = { role: 'user', content: [...queuedToolResults, { type: 'text', text }] };
+            const userMessage = {
+                role: 'user',
+                content: [...queuedToolResults, { type: 'text', text: chatContext() }, { type: 'text', text }]
+            };
             const toolResultsSent = queuedToolResults;
             queuedToolResults = [];
 
@@ -3252,23 +3378,21 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
 
                 chatHistory.push(userMessage, { role: 'assistant', content: response.content });
 
-                const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-                const toolUses = response.content.filter(b => b.type === 'tool_use' && b.name === 'log_exercises');
+                const reply = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+                const toolUses = response.content.filter(b => b.type === 'tool_use');
 
-                if (text) addChatBubble('assistant', text);
+                if (reply) addChatBubble('assistant', reply);
 
                 if (toolUses.length) {
                     const toolUseIds = toolUses.map(b => b.id);
-                    const raw = toolUses.flatMap(b => (b.input && Array.isArray(b.input.entries)) ? b.input.entries : []);
-                    const entries = raw.map(cleanEntry);
-
-                    if (raw.length && entries.every(Boolean)) {
-                        renderProposal(entries, toolUseIds);
+                    const proposal = readToolCalls(toolUses);
+                    if (proposal) {
+                        renderProposal(proposal, toolUseIds);
                     } else {
-                        queueToolResults(toolUseIds, 'Some entries were invalid (missing values, out of range, or a future date). Nothing was saved.', true);
-                        addChatBubble('error', "I couldn't read that clearly. Try again with the weight, sets and reps.");
+                        queueToolResults(toolUseIds, 'Some of that was invalid (missing values, out of range, a future date, or an unknown ref). Nothing was changed.', true);
+                        addChatBubble('error', "I couldn't read that clearly. Try again with the day, weight, sets and reps.");
                     }
-                } else if (!text) {
+                } else if (!reply) {
                     addChatBubble('error', response.stop_reason === 'max_tokens'
                         ? 'That one ran long. Try a shorter message.'
                         : "I didn't catch that. Try something like \"bench 185 3x5\".");
@@ -3321,14 +3445,31 @@ ${lastSessions.length ? lastSessions.join('\n') : '(no history yet)'}`;
             if (saveKeyFrom('chat-api-key-input')) document.getElementById('chat-input').focus();
         };
 
+        function autosizeChatInput() {
+            const input = document.getElementById('chat-input');
+            input.style.height = 'auto';
+            input.style.height = `${input.scrollHeight + 4}px`; // + the 2px top and bottom border
+        }
+        
         document.getElementById('chat-form').onsubmit = (e) => {
             e.preventDefault();
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (!text || chatBusy) return;
             input.value = '';
+            autosizeChatInput();
             sendChatMessage(text);
         };
+        
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('input', autosizeChatInput);
+        // Return sends, like the single-line box did; Shift+Return adds a line break
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+                e.preventDefault();
+                document.getElementById('chat-form').requestSubmit();
+            }
+        });
 
         document.getElementById('save-api-key-btn').onclick = () => {
             if (saveKeyFrom('settings-api-key-input')) showToast('Key saved');
